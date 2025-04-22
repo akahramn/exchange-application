@@ -2,17 +2,20 @@ package com.abdullahkahraman.exchange.service;
 
 import com.abdullahkahraman.exchange.cache.CurrencyCacheService;
 import com.abdullahkahraman.exchange.client.CurrencyLayerClient;
-import com.abdullahkahraman.exchange.dto.CurrencyConversionRequest;
-import com.abdullahkahraman.exchange.dto.CurrencyConversionResponse;
-import com.abdullahkahraman.exchange.dto.ExchangeRateResponse;
+import com.abdullahkahraman.exchange.dto.*;
 import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.CurrencyRateFetchException;
+import com.abdullahkahraman.exchange.exception.TransactionNotFoundException;
 import com.abdullahkahraman.exchange.model.Currency;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
 import com.abdullahkahraman.exchange.repository.CurrencyRepository;
+import com.abdullahkahraman.exchange.specification.ConversionTransactionSpecification;
 import com.abdullahkahraman.exchange.validator.Validator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -117,5 +121,25 @@ public class CurrencyService {
                 .targetCurrency(request.getTargetCurrency())
                 .build();
         currencyRepository.save(transaction);
+    }
+
+    public HistoryResponse getHistory(String transactionId, LocalDate date, Pageable pageable) {
+        Specification<Currency> spec =
+                ConversionTransactionSpecification.filterBy(transactionId, date);
+
+        if (!ObjectUtils.isEmpty(transactionId) && !currencyRepository.existsById(transactionId)) {
+            throw new TransactionNotFoundException(transactionId);
+        }
+
+        Page<Currency> currencyPage = currencyRepository.findAll(spec, pageable);
+
+        Page<CurrencyDto> dtoPage = currencyPage.map(currency -> new CurrencyDto(
+                currency.getTransactionId(),
+                currency.getSourceCurrency().name(),
+                currency.getTargetCurrency().name(),
+                currency.getResult()
+        ));
+
+        return new HistoryResponse(dtoPage);
     }
 }
