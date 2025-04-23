@@ -87,9 +87,13 @@ public class CurrencyService {
         String transactionId = UUID.randomUUID().toString();
 
         saveTransaction(transactionId, request, result);
-        return new CurrencyConversionResponse(transactionId,
-                request.getSourceCurrency(),
-                request.getTargetCurrency(), request.getAmount(), result);
+        return CurrencyConversionResponse.builder()
+                .transactionId(transactionId)
+                .sourceCurrency(request.getSourceCurrency())
+                .targetCurrency(request.getTargetCurrency())
+                .sourceAmount(request.getAmount())
+                .convertedAmount(result)
+                .build();
     }
 
     public List<CurrencyConversionResponse> convertFileCurrency( MultipartFile file) throws IOException {
