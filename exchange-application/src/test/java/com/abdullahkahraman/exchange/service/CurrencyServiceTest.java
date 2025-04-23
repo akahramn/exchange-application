@@ -10,6 +10,7 @@ import com.abdullahkahraman.exchange.model.Currency;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
 import com.abdullahkahraman.exchange.repository.CurrencyRepository;
+import com.abdullahkahraman.exchange.validator.CurrencyCodeValidator;
 import com.abdullahkahraman.exchange.validator.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ class CurrencyServiceTest {
     private ConversionFileParser conversionFileParser;
     private Validator validator1;
     private Validator validator2;
+    private CurrencyCodeValidator currencyCodeValidator;
 
     @BeforeEach
     void setUp() {
@@ -52,11 +54,12 @@ class CurrencyServiceTest {
         validator1 = Mockito.mock(Validator.class);
         validator2 = Mockito.mock(Validator.class);
         conversionFileParserFactory = Mockito.mock(ConversionFileParserFactory.class);
+        currencyCodeValidator = Mockito.mock(CurrencyCodeValidator.class);
         currencyService = new CurrencyService(currencyRepository,
                 currencyCacheService,
                 currencyLayerClient,
                 conversionFileParserFactory,
-                List.of(validator1, validator2));
+                List.of(validator1, validator2), currencyCodeValidator);
     }
 
     @Test
@@ -134,9 +137,9 @@ class CurrencyServiceTest {
 
     @Test
     void whenExchangeRateExists_shouldReturnExchangeRateResponse() {
-        CurrencyCode sourceCurrency = CurrencyCode.USD;
-        CurrencyCode targetCurrency = CurrencyCode.EUR;
-        String key = sourceCurrency.toString() + targetCurrency.toString();
+        String sourceCurrency = "USD";
+        String targetCurrency = "EUR";
+        String key = sourceCurrency + targetCurrency;
         Double rate = 42.0;
 
         when(currencyCacheService.exists(key)).thenReturn(true);
@@ -145,8 +148,8 @@ class CurrencyServiceTest {
         ExchangeRateResponse response = currencyService.getExchangeRate(sourceCurrency, targetCurrency);
 
         assertNotNull(response);
-        assertEquals(sourceCurrency, response.getSourceCurrency());
-        assertEquals(targetCurrency, response.getTargetCurrency());
+        assertEquals(sourceCurrency, response.getSourceCurrency().toString());
+        assertEquals(targetCurrency, response.getTargetCurrency().toString());
         assertEquals(rate, response.getRate());
 
         verify(currencyCacheService).exists(key);
@@ -164,7 +167,7 @@ class CurrencyServiceTest {
                 .thenThrow(new RuntimeException("Fetch failed"));
         when(currencyCacheService.getRate(key)).thenReturn(null);
 
-        assertThrows(CurrencyRateFetchException.class, () -> currencyService.getExchangeRate(sourceCurrency, targetCurrency));
+        assertThrows(CurrencyRateFetchException.class, () -> currencyService.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString()));
 
         verify(currencyCacheService).getRate(key);
         verify(currencyLayerClient).fetchExchangeRate(sourceCurrency, targetCurrency, key);
@@ -267,8 +270,8 @@ class CurrencyServiceTest {
         );
 
         List<CurrencyConversionRequest> mockRequests = List.of(
-                new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR),
-                new CurrencyConversionRequest(BigDecimal.valueOf(200), CurrencyCode.GBP, CurrencyCode.USD)
+                new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString()),
+                new CurrencyConversionRequest(BigDecimal.valueOf(200), CurrencyCode.GBP.toString(), CurrencyCode.USD.toString())
         );
 
         List<CurrencyConversionResponse> mockResponses = List.of(
@@ -326,13 +329,13 @@ class CurrencyServiceTest {
     @Test
     public void whenSaveTransactionValidRequestProvided_shouldReturnResponses() {
         String transactionId = "tx1";
-        CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
+        CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
         BigDecimal result = BigDecimal.valueOf(110);
 
         Currency currency = Currency.builder()
                 .transactionId(transactionId)
-                .sourceCurrency(request.getSourceCurrency())
-                .targetCurrency(request.getTargetCurrency())
+                .sourceCurrency(CurrencyCode.valueOf(request.getSourceCurrency()))
+                .targetCurrency(CurrencyCode.valueOf(request.getTargetCurrency()))
                 .amount(request.getAmount())
                 .result(result)
                 .build();
@@ -347,7 +350,7 @@ class CurrencyServiceTest {
     @Test
     public void whenConvertCurrencyValidRequestProvided_shouldConvertSingleSuccessfully() {
         CurrencyConversionRequest request = new CurrencyConversionRequest(
-                BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
+                BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
         Double rate = 1.5;
 
         String key = "USDEUR";
@@ -359,8 +362,8 @@ class CurrencyServiceTest {
         CurrencyConversionResponse response = currencyService.convertSingleCurrency(request);
 
         assertNotNull(response);
-        assertEquals(request.getSourceCurrency(), response.getSourceCurrency());
-        assertEquals(request.getTargetCurrency(), response.getTargetCurrency());
+        assertEquals(request.getSourceCurrency(), response.getSourceCurrency().toString());
+        assertEquals(request.getTargetCurrency(), response.getTargetCurrency().toString());
         assertEquals(expectedResult, response.getConvertedAmount());
         assertEquals(request.getAmount(), response.getSourceAmount());
 
@@ -371,7 +374,7 @@ class CurrencyServiceTest {
     @Test
     public void whenConvertSingleCurrencyValidatorFails_shouldThrowException() {
         CurrencyConversionRequest request = new CurrencyConversionRequest(
-                BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
+                BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
 
         doThrow(new IllegalArgumentException("Invalid request")).when(validator1).validate(request);
 
@@ -384,7 +387,7 @@ class CurrencyServiceTest {
     @Test
     public void whenConvertSingleCurrencyConversionSuccessful_shouldCallGetRateSuccessfully() {
         CurrencyConversionRequest request = new CurrencyConversionRequest(
-                BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
+                BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
 
         Double rate = 1.8;
 
@@ -398,7 +401,7 @@ class CurrencyServiceTest {
     @Test
     void whenConversionSuccessful_shouldSaveTransaction() {
         CurrencyConversionRequest request = new CurrencyConversionRequest(
-                BigDecimal.valueOf(200), CurrencyCode.USD, CurrencyCode.GBP);
+                BigDecimal.valueOf(200), CurrencyCode.USD.toString(), CurrencyCode.GBP.toString());
         Double rate = 0.8;
         BigDecimal expectedResult = BigDecimal.valueOf(160.00).setScale(4, RoundingMode.HALF_UP);
 
@@ -409,8 +412,8 @@ class CurrencyServiceTest {
         currencyService.convertSingleCurrency(request);
 
         verify(currencyRepository).save(argThat(transaction ->
-                request.getSourceCurrency().equals(transaction.getSourceCurrency()) &&
-                        request.getTargetCurrency().equals(transaction.getTargetCurrency()) &&
+                request.getSourceCurrency().equals(transaction.getSourceCurrency().toString()) &&
+                        request.getTargetCurrency().equals(transaction.getTargetCurrency().toString()) &&
                         expectedResult.equals(transaction.getResult()) &&
                         request.getAmount().equals(transaction.getAmount()) &&
                         transaction.getTransactionId() != null
@@ -420,7 +423,7 @@ class CurrencyServiceTest {
     @Test
     void whenConversionSuccessful_shouldReturnCorrectCurrencyConversionResponse() {
         CurrencyConversionRequest request = new CurrencyConversionRequest(
-                BigDecimal.valueOf(50), CurrencyCode.EUR, CurrencyCode.USD);
+                BigDecimal.valueOf(50), CurrencyCode.EUR.toString(), CurrencyCode.USD.toString());
         Double rate = 1.1;
         BigDecimal expectedResult = BigDecimal.valueOf(55.00).setScale(4, RoundingMode.HALF_UP);
 
@@ -432,8 +435,8 @@ class CurrencyServiceTest {
         CurrencyConversionResponse response = currencyService.convertSingleCurrency(request);
 
         assertNotNull(response);
-        assertEquals(request.getSourceCurrency(), response.getSourceCurrency());
-        assertEquals(request.getTargetCurrency(), response.getTargetCurrency());
+        assertEquals(request.getSourceCurrency(), response.getSourceCurrency().toString());
+        assertEquals(request.getTargetCurrency(), response.getTargetCurrency().toString());
         assertEquals(expectedResult, response.getConvertedAmount());
         assertEquals(request.getAmount(), response.getSourceAmount());
         assertNotNull(response.getTransactionId());
@@ -441,7 +444,7 @@ class CurrencyServiceTest {
 
     @Test
     void whenConvertCurrencyOnlyRequestProvided_shouldReturnSingleResponse() {
-        CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
+        CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
         CurrencyConversionResponse mockResponse = new CurrencyConversionResponse("tx1", CurrencyCode.USD, CurrencyCode.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(110));
 
         CurrencyService spyService = Mockito.spy(currencyService);
@@ -479,7 +482,7 @@ class CurrencyServiceTest {
     @Test
     void whenConvertCurrencyBothRequestAndFileProvided_shouldReturnBothResponses() {
         // Arrange
-        CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
+        CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
         CurrencyConversionResponse response1 = new CurrencyConversionResponse("tx1", CurrencyCode.USD, CurrencyCode.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(110));
 
         MockMultipartFile file = new MockMultipartFile("file", "test.csv", "text/csv", "content".getBytes());

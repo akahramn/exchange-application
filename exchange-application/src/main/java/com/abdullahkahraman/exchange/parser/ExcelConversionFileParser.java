@@ -58,10 +58,8 @@ public class ExcelConversionFileParser implements ConversionFileParser {
                     String target = targetCell.getStringCellValue();
 
                     BigDecimal amount = BigDecimal.valueOf(amountVal);
-                    CurrencyCode sourceCode = CurrencyCode.valueOf(source.toUpperCase());
-                    CurrencyCode targetCode = CurrencyCode.valueOf(target.toUpperCase());
 
-                    list.add(new CurrencyConversionRequest(amount, sourceCode, targetCode));
+                    list.add(new CurrencyConversionRequest(amount, source.toUpperCase(), target.toUpperCase()));
 
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     throw new InvalidExcelFormatException("Invalid data at row: " + row.getRowNum(), e);

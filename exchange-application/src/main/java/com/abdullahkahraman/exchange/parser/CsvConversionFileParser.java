@@ -55,10 +55,8 @@ public class CsvConversionFileParser implements ConversionFileParser{
                     }
 
                     BigDecimal amount = new BigDecimal(amountStr);
-                    CurrencyCode source = CurrencyCode.valueOf(sourceCurrency.toUpperCase());
-                    CurrencyCode target = CurrencyCode.valueOf(targetCurrency.toUpperCase());
 
-                    list.add(new CurrencyConversionRequest(amount, source, target));
+                    list.add(new CurrencyConversionRequest(amount, sourceCurrency.toUpperCase(), targetCurrency.toUpperCase()));
 
                 } catch (NumberFormatException e) {
                     throw new InvalidCsvFormatException("Invalid number format at row: " + record.toString());

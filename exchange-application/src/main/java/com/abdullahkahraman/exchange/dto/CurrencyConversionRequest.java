@@ -18,8 +18,8 @@ public class CurrencyConversionRequest {
     private BigDecimal amount;
 
     @Schema(description = "Source currency code", example = "USD")
-    private CurrencyCode sourceCurrency;
+    private String sourceCurrency;
 
     @Schema(description = "Target currency code", example = "EUR")
-    private CurrencyCode targetCurrency;
+    private String targetCurrency;
 }

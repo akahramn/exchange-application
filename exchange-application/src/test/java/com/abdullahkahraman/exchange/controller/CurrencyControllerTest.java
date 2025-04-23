@@ -14,8 +14,6 @@ import org.mockito.Mockito;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -84,10 +82,10 @@ class CurrencyControllerTest {
         CurrencyCode targetCurrency = CurrencyCode.EUR;
         ExchangeRateResponse mockResponse = new ExchangeRateResponse();
 
-        Mockito.when(currencyService.getExchangeRate(Mockito.eq(sourceCurrency), Mockito.eq(targetCurrency)))
+        Mockito.when(currencyService.getExchangeRate(Mockito.eq(sourceCurrency.toString()), Mockito.eq(targetCurrency.toString())))
                 .thenReturn(mockResponse);
 
-        ResponseEntity<ExchangeRateResponse> response = currencyController.getExchangeRate(sourceCurrency, targetCurrency);
+        ResponseEntity<ExchangeRateResponse> response = currencyController.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString());
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
@@ -101,10 +99,10 @@ class CurrencyControllerTest {
         RuntimeException exception = new RuntimeException("Test exception");
 
         try {
-            Mockito.when(currencyService.getExchangeRate(Mockito.eq(sourceCurrency), Mockito.eq(targetCurrency)))
+            Mockito.when(currencyService.getExchangeRate(Mockito.eq(sourceCurrency.toString()), Mockito.eq(targetCurrency.toString())))
                     .thenThrow(exception);
 
-            currencyController.getExchangeRate(sourceCurrency, targetCurrency);
+            currencyController.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString());
             fail("Expected exception was not thrown");
         } catch (RuntimeException e) {
             assertEquals("Test exception", e.getMessage());

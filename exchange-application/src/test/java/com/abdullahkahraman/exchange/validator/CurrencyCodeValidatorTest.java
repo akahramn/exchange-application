@@ -19,8 +19,8 @@ class CurrencyCodeValidatorTest {
     @Test
     void whenValidateValidCurrencyCodes_shouldNotThrowException() {
         CurrencyConversionRequest request = new CurrencyConversionRequest();
-        request.setSourceCurrency(CurrencyCode.USD);
-        request.setTargetCurrency(CurrencyCode.EUR);
+        request.setSourceCurrency("USD");
+        request.setTargetCurrency("EUR");
 
         assertDoesNotThrow(() -> currencyCodeValidator.validate(request));
     }
@@ -29,7 +29,7 @@ class CurrencyCodeValidatorTest {
     void whenSourceCurrencyIsInvalid_shouldThrowInvalidCurrencyException() {
         CurrencyConversionRequest request = new CurrencyConversionRequest();
         request.setSourceCurrency(null); // Simulate invalid source currency
-        request.setTargetCurrency(CurrencyCode.EUR);
+        request.setTargetCurrency("EUR");
 
         InvalidCurrencyException exception = assertThrows(
                 InvalidCurrencyException.class,
@@ -42,7 +42,7 @@ class CurrencyCodeValidatorTest {
     @Test
     void whenTargetCurrencyIsInvalid_shouldThrowInvalidCurrencyException() {
         CurrencyConversionRequest request = new CurrencyConversionRequest();
-        request.setSourceCurrency(CurrencyCode.USD);
+        request.setSourceCurrency("USD");
         request.setTargetCurrency(null); // Simulate invalid target currency
 
         InvalidCurrencyException exception = assertThrows(

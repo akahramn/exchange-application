@@ -1,7 +1,6 @@
 package com.abdullahkahraman.exchange.validator;
 
 import com.abdullahkahraman.exchange.dto.CurrencyConversionRequest;
-import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +17,8 @@ class SameCurrencyValidatorTest {
     @Test
     void whenTargetCurrenciesAreSame_shouldThrowExceptionWhenSourceAnd() {
         CurrencyConversionRequest request = new CurrencyConversionRequest();
-        request.setSourceCurrency(CurrencyCode.USD);
-        request.setTargetCurrency(CurrencyCode.USD);
+        request.setSourceCurrency("USD");
+        request.setTargetCurrency("USD");
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             sameCurrencyValidator.validate(request);
@@ -30,8 +29,8 @@ class SameCurrencyValidatorTest {
     @Test
     void whenTargetCurrencyIsDifferentFromSource_shouldNotThrowException() {
         CurrencyConversionRequest request = new CurrencyConversionRequest();
-        request.setSourceCurrency(CurrencyCode.USD);
-        request.setTargetCurrency(CurrencyCode.EUR);
+        request.setSourceCurrency("USD");
+        request.setTargetCurrency("EUR");
 
         assertDoesNotThrow(() -> sameCurrencyValidator.validate(request));
     }

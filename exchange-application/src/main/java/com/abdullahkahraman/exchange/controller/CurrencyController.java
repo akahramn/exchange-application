@@ -60,13 +60,13 @@ public class CurrencyController {
                     example = "USD",
                     required = true
             )
-            @RequestParam("sourceCurrency") CurrencyCode sourceCurrency,
+            @RequestParam("sourceCurrency") String sourceCurrency,
             @Parameter(
                     description = "The currency code to convert to (e.g., EUR)",
                     example = "EUR",
                     required = true
             )
-            @RequestParam("targetCurrency") CurrencyCode targetCurrency
+            @RequestParam("targetCurrency") String targetCurrency
     ) {
         logger.info("Received request to get exchange rate: {} -> {}", sourceCurrency, targetCurrency);
 

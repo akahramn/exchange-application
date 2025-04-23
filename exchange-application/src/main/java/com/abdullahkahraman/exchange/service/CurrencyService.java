@@ -5,12 +5,14 @@ import com.abdullahkahraman.exchange.client.CurrencyLayerClient;
 import com.abdullahkahraman.exchange.dto.*;
 import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.CurrencyRateFetchException;
+import com.abdullahkahraman.exchange.exception.InvalidCurrencyException;
 import com.abdullahkahraman.exchange.exception.TransactionNotFoundException;
 import com.abdullahkahraman.exchange.model.Currency;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
 import com.abdullahkahraman.exchange.repository.CurrencyRepository;
 import com.abdullahkahraman.exchange.specification.ConversionTransactionSpecification;
+import com.abdullahkahraman.exchange.validator.CurrencyCodeValidator;
 import com.abdullahkahraman.exchange.validator.Validator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -42,6 +44,7 @@ public class CurrencyService {
     private final CurrencyLayerClient currencyLayerClient;
     private final ConversionFileParserFactory conversionFileParserFactory;
     private final List<Validator> validators;
+    private final CurrencyCodeValidator currencyCodeValidator;
 
     /**
      * Retrieves the exchange rate between two specified currencies.
@@ -51,14 +54,17 @@ public class CurrencyService {
      * @return an {@code ExchangeRateResponse} containing the source currency,
      *         target currency, and the latest exchange rate value
      */
-    public ExchangeRateResponse getExchangeRate(CurrencyCode sourceCurrency, CurrencyCode targetCurrency) {
+    public ExchangeRateResponse getExchangeRate(String sourceCurrency, String targetCurrency) {
         logger.info("Fetching exchange rate from {} to {}", sourceCurrency, targetCurrency);
 
-        Double rate = getRate(sourceCurrency, targetCurrency);
+        CurrencyCode source = toValidCurrency(sourceCurrency, "sourceCurrency");
+        CurrencyCode target = toValidCurrency(targetCurrency, "targetCurrency");
+
+        Double rate = getRate(source, target);
 
         logger.debug("Retrieved exchange rate: {}", rate);
 
-        return new ExchangeRateResponse(sourceCurrency, targetCurrency, rate);
+        return new ExchangeRateResponse(source, target, rate);
     }
 
     /**
@@ -146,8 +152,9 @@ public class CurrencyService {
 
         validateRequest(request);
         logger.debug("Request validated: {}", request);
-
-        Double rateValue = getRate(request.getSourceCurrency(), request.getTargetCurrency());
+        CurrencyCode source = CurrencyCode.valueOf(request.getSourceCurrency().toUpperCase());
+        CurrencyCode target = CurrencyCode.valueOf(request.getTargetCurrency().toUpperCase());
+        Double rateValue = getRate(source, target);
         logger.debug("Retrieved exchange rate: {} -> {} = {}",
                 request.getSourceCurrency(), request.getTargetCurrency(), rateValue);
 
@@ -161,8 +168,8 @@ public class CurrencyService {
 
         CurrencyConversionResponse response = CurrencyConversionResponse.builder()
                 .transactionId(transactionId)
-                .sourceCurrency(request.getSourceCurrency())
-                .targetCurrency(request.getTargetCurrency())
+                .sourceCurrency(source)
+                .targetCurrency(target)
                 .sourceAmount(request.getAmount())
                 .convertedAmount(result)
                 .build();
@@ -233,8 +240,8 @@ public class CurrencyService {
                 .transactionId(transactionId)
                 .amount(request.getAmount())
                 .result(result)
-                .sourceCurrency(request.getSourceCurrency())
-                .targetCurrency(request.getTargetCurrency())
+                .sourceCurrency(CurrencyCode.valueOf(request.getSourceCurrency()))
+                .targetCurrency(CurrencyCode.valueOf(request.getTargetCurrency()))
                 .build();
 
         try {
@@ -322,5 +329,18 @@ public class CurrencyService {
      */
     private String generateTransactionId() {
         return UUID.randomUUID().toString();
+    }
+
+    /**
+     * Validates the provided currency string and converts it to a CurrencyCode enum.
+     *
+     * @param currencyStr the currency code as string
+     * @param fieldName the name of the field (used for error messages)
+     * @return the corresponding CurrencyCode enum
+     * @throws InvalidCurrencyException if validation fails
+     */
+    private CurrencyCode toValidCurrency(String currencyStr, String fieldName) {
+        currencyCodeValidator.validate(currencyStr, fieldName);
+        return CurrencyCode.valueOf(currencyStr.trim().toUpperCase());
     }
 }

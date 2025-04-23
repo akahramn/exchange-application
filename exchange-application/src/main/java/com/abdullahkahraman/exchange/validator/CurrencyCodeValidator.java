@@ -20,6 +20,10 @@ public class CurrencyCodeValidator implements Validator {
         validateCurrency(String.valueOf(request.getTargetCurrency()), "targetCurrency");
     }
 
+    public void validate(String currencyCode, String fieldName) {
+        validateCurrency(currencyCode, fieldName);
+    }
+
     /**
      * Validates the provided currency code and throws an exception if the code is invalid.
      *
