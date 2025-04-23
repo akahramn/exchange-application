@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -87,17 +88,33 @@ public class CurrencyController {
         return ResponseEntity.ok().body(currencyService.convertCurrency(request, file));
     }
 
+    @Operation(
+            summary = "Get conversion history",
+            description = "Returns a paginated list of past currency conversion transactions. At least one of 'transactionId' or 'date' must be provided."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "History retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Missing both transactionId and date"),
+            @ApiResponse(responseCode = "404", description = "Transaction not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/history")
     public ResponseEntity<HistoryResponse> getHistory(
+            @Parameter(description = "Transaction ID to filter history", example = "a1b2c3d4-e5f6")
             @RequestParam(value = "transactionId", required = false) String transactionId,
+
+            @Parameter(description = "Transaction date to filter history", example = "2024-12-15")
             @RequestParam(value = "date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+
+            @ParameterObject
             @PageableDefault(size = 10) Pageable pageable
     ) {
         validateSearchCriteria(transactionId, date);
         HistoryResponse response = currencyService.getHistory(transactionId, date, pageable);
         return ResponseEntity.ok(response);
     }
+
 
     private void validateSearchCriteria(String transactionId, LocalDate date) {
         boolean isTransactionIdMissing = transactionId == null || transactionId.isBlank();
