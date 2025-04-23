@@ -78,13 +78,11 @@ public class CurrencyService {
     }
 
     public CurrencyConversionResponse convertSingleCurrency(CurrencyConversionRequest request) {
-        for (Validator validator : validators) {
-            validator.validate(request);
-        }
+        validateRequest(request);
 
         Double rateValue = getRate(request.getSourceCurrency(), request.getTargetCurrency());
         BigDecimal result = calculateAmount(request.getAmount(), rateValue);
-        String transactionId = UUID.randomUUID().toString();
+        String transactionId = generateTransactionId();
 
         saveTransaction(transactionId, request, result);
         return CurrencyConversionResponse.builder()
@@ -95,6 +93,17 @@ public class CurrencyService {
                 .convertedAmount(result)
                 .build();
     }
+
+    private void validateRequest(CurrencyConversionRequest request) {
+        for (Validator validator : validators) {
+            validator.validate(request);
+        }
+    }
+
+    private String generateTransactionId() {
+        return UUID.randomUUID().toString();
+    }
+
 
     public List<CurrencyConversionResponse> convertFileCurrency( MultipartFile file) throws IOException {
         List<CurrencyConversionResponse> results = new ArrayList<>();
