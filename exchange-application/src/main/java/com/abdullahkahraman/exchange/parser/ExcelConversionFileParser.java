@@ -16,6 +16,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ExcelConversionFileParser implements ConversionFileParser {
+    /**
+     * Parses a provided Excel file to extract currency conversion requests.
+     * The file must comply with the expected Excel format, containing rows with
+     * three columns: "amount", "sourceCurrency", and "targetCurrency".
+     *
+     * @param file the Excel file to parse containing currency conversion data
+     * @return a list of {@code CurrencyConversionRequest} objects built from the parsed Excel file
+     * @throws InvalidExcelFormatException if the Excel file is invalid, missing data, or contains
+     *                                     formatting errors
+     */
     @Override
     public List<CurrencyConversionRequest> parse(MultipartFile file) {
         List<CurrencyConversionRequest> list = new ArrayList<>();

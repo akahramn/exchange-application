@@ -20,6 +20,15 @@ public class CurrencyLayerClient {
     @Value("${currencylayer.api.access-key}")
     private String CURRENCY_LAYER_ACCESS_KEY;
 
+    /**
+     * Fetches the exchange rate between two currencies using a specified key.
+     *
+     * @param source the source currency code
+     * @param target the target currency code
+     * @param key the key used to identify the specific exchange rate in the response
+     * @return the exchange rate as a Double
+     * @throws RateNotFoundException if the exchange rate for the given key is not found
+     */
     public Double fetchExchangeRate(CurrencyCode source, CurrencyCode target, String key) {
         List<String> symbols = List.of(target.toString());
         String joinedSymbols = String.join(",", symbols);

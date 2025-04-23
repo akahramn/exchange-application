@@ -2,6 +2,14 @@ package com.abdullahkahraman.exchange.enums;
 
 import java.util.Arrays;
 
+/**
+ * Represents an enumeration of supported currency codes along with their
+ * respective full descriptions. Commonly used in currency exchange and
+ * conversion functionalities.
+ *
+ * This enum provides functionality to retrieve full descriptions of the
+ * currency codes and verify the validity of a currency code.
+ */
 public enum CurrencyCode {
     USD("United States Dollar"),
     EUR("Euro"),
@@ -28,12 +36,5 @@ public enum CurrencyCode {
     public static boolean isValid(String code) {
         return Arrays.stream(CurrencyCode.values())
                 .anyMatch(currency -> currency.name().equalsIgnoreCase(code));
-    }
-
-    public static CurrencyCode fromString(String code) {
-        return Arrays.stream(CurrencyCode.values())
-                .filter(currency -> currency.name().equalsIgnoreCase(code))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Invalid currency code: " + code));
     }
 }

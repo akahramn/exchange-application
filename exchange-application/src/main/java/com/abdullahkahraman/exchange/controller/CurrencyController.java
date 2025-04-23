@@ -31,6 +31,13 @@ import java.util.List;
 public class CurrencyController {
     private final CurrencyService currencyService;
 
+    /**
+     * Retrieves the latest exchange rate between the given source and target currencies.
+     *
+     * @param sourceCurrency the currency code to convert from (e.g., USD)
+     * @param targetCurrency the currency code to convert to (e.g., EUR)
+     * @return a {@link ResponseEntity} containing an {@link ExchangeRateResponse} object with the exchange rate information
+     */
     @Operation(
             summary = "Get exchange rate",
             description = "Retrieves the latest exchange rate between the given source and target currencies."
@@ -58,6 +65,16 @@ public class CurrencyController {
         return ResponseEntity.ok().body(currencyService.getExchangeRate(sourceCurrency, targetCurrency));
     }
 
+    /**
+     * Handles the currency conversion process, allowing input through a JSON payload for a single conversion
+     * request or a CSV/Excel file for multiple conversion requests. Converts the amount from the source currency
+     * to the target currency and returns the result.
+     *
+     * @param request JSON data representing a single currency conversion request (optional).
+     * @param file CSV or Excel file containing multiple currency conversion requests (optional).
+     * @return a {@link ResponseEntity} encapsulating a list of {@link CurrencyConversionResponse} objects with
+     *         the conversion results.
+     */
     @Operation(
             summary = "Convert currency via JSON or file upload",
             description = "Converts an amount from source currency to target currency. You can either send a JSON payload or upload a CSV or EXCEL file containing multiple conversion requests."
@@ -86,6 +103,15 @@ public class CurrencyController {
         return ResponseEntity.ok().body(currencyService.convertCurrency(request, file));
     }
 
+    /**
+     * Retrieves a paginated list of past currency conversion transactions.
+     * At least one of 'transactionId' or 'date' must be provided as a search criterion.
+     *
+     * @param transactionId the ID of a specific transaction to filter the history (optional)
+     * @param date the date of transactions to filter the history (optional)
+     * @param pageable pagination details such as page number and size
+     * @return a {@link ResponseEntity} containing a {@link HistoryResponse} object with the filtered transaction history
+     */
     @Operation(
             summary = "Get conversion history",
             description = "Returns a paginated list of past currency conversion transactions. At least one of 'transactionId' or 'date' must be provided."

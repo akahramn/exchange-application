@@ -18,6 +18,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CsvConversionFileParser implements ConversionFileParser{
+    /**
+     * Parses a provided CSV file to extract currency conversion requests.
+     * The file must comply with the expected CSV format, containing the headers:
+     * "amount", "sourceCurrency", and "targetCurrency".
+     *
+     * @param file the CSV file to parse containing currency conversion data
+     * @return a list of {@code CurrencyConversionRequest} objects built from the parsed CSV file
+     * @throws InvalidCsvFormatException if the CSV file is empty, the format is incorrect,
+     *                                   required headers are missing, or data is invalid
+     */
     @Override
     public List<CurrencyConversionRequest> parse(MultipartFile file) {
         List<CurrencyConversionRequest> list = new ArrayList<>();
