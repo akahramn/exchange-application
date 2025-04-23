@@ -1,4 +1,4 @@
-# 💱 Currency Exchange Application
+# Currency Exchange Application
 
 A simple REST API built with **Spring Boot (Java 21)** that allows you to:
 - Convert currency values
@@ -9,18 +9,18 @@ Includes Docker support with Redis caching and H2 in-memory database.
 
 ---
 
-## 🚀 Features
+## Features
 
-- 🔁 Real-time currency conversion
-- 📊 Get exchange rates between currencies
-- 🧾 Access conversion history (by ID or date)
-- ⚡ Redis caching for improved performance
-- 🐳 Dockerized deployment with `docker-compose`
-- 📄 Swagger UI for API documentation
+- Real-time currency conversion
+- Get exchange rates between currencies
+- Access conversion history (by ID or date)
+- Redis caching for improved performance
+- Dockerized deployment with `docker-compose`
+- Swagger UI for API documentation
 
 ---
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 - Java 21 (Eclipse Temurin)
 - Spring Boot 3.x
@@ -32,18 +32,21 @@ Includes Docker support with Redis caching and H2 in-memory database.
 
 ---
 
-## 📦 Installation & Running
+## Installation & Running
 
-### 🚨 Prerequisites
+### Prerequisites
 - Java 21
 - Docker & Docker Compose
 - Maven (or use `./mvnw`)
 
-### ▶️ Run with Docker
+### Run with Docker
 
 ```bash
-# Build the JAR
-./mvnw clean package -DskipTests
+# Navigate to the project root directory
+cd exchange-application
 
-# Start the application with Redis using Docker
+# Build the JAR file
+./mvnw clean package
+
+# Start the application and Redis using Docker Compose
 docker-compose up --build
