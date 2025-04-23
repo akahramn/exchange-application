@@ -72,10 +72,17 @@ public class CurrencyController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @PageableDefault(size = 10) Pageable pageable
     ) {
-        if (ObjectUtils.isEmpty(transactionId) && ObjectUtils.isEmpty(date)) {
+        validateSearchCriteria(transactionId, date);
+        HistoryResponse response = currencyService.getHistory(transactionId, date, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    private void validateSearchCriteria(String transactionId, LocalDate date) {
+        boolean isTransactionIdMissing = transactionId == null || transactionId.isBlank();
+        boolean isDateMissing = date == null;
+
+        if (isTransactionIdMissing && isDateMissing) {
             throw new MissingSearchCriteriaException();
         }
-
-        return ResponseEntity.ok(currencyService.getHistory(transactionId, date, pageable));
     }
 }
