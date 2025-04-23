@@ -93,7 +93,7 @@ class CurrencyServiceTest {
         Double fetchedRate = 38.0;
 
         when(currencyCacheService.exists(key)).thenReturn(false);
-        when(currencyLayerClient.fetchExchangeRate(sourceCurrency, targetCurrency, key)).thenReturn(fetchedRate);
+        when(exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key)).thenReturn(fetchedRate);
 
         Double rate = currencyService.getRate(sourceCurrency, targetCurrency);
 
@@ -101,7 +101,7 @@ class CurrencyServiceTest {
         assertEquals(fetchedRate, rate);
 
         verify(currencyCacheService).exists(key);
-        verify(currencyLayerClient).fetchExchangeRate(sourceCurrency, targetCurrency, key);
+        verify(exchangeRateChainManager).getRate(sourceCurrency, targetCurrency, key);
     }
 
     @Test
@@ -112,7 +112,7 @@ class CurrencyServiceTest {
         Double fallbackRate = 38.0;
 
         when(currencyCacheService.exists(key)).thenReturn(false);
-        when(currencyLayerClient.fetchExchangeRate(sourceCurrency, targetCurrency, key)).thenThrow(new RuntimeException("Fetch failed"));
+        when(exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key)).thenThrow(new RuntimeException("Fetch failed"));
         when(currencyCacheService.getRate(key)).thenReturn(fallbackRate);
 
         Double rate = currencyService.getRate(sourceCurrency, targetCurrency);
@@ -121,7 +121,7 @@ class CurrencyServiceTest {
         assertEquals(fallbackRate, rate);
 
         verify(currencyCacheService).getRate(key);
-        verify(currencyLayerClient).fetchExchangeRate(sourceCurrency, targetCurrency, key);
+        verify(exchangeRateChainManager).getRate(sourceCurrency, targetCurrency, key);
     }
 
     @Test
@@ -131,7 +131,7 @@ class CurrencyServiceTest {
         String key = sourceCurrency.toString() + targetCurrency.toString();
 
         when(currencyCacheService.exists(key)).thenReturn(false);
-        when(currencyLayerClient.fetchExchangeRate(sourceCurrency, targetCurrency, key)).thenThrow(new RuntimeException("Fetch failed"));
+        when(exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key)).thenThrow(new RuntimeException("Fetch failed"));
         when(currencyCacheService.getRate(key)).thenReturn(null);
 
         assertThrows(CurrencyRateFetchException.class, () -> currencyService.getRate(sourceCurrency, targetCurrency));
@@ -167,14 +167,14 @@ class CurrencyServiceTest {
         String key = sourceCurrency.toString() + targetCurrency.toString();
 
         when(currencyCacheService.exists(key)).thenReturn(false);
-        when(currencyLayerClient.fetchExchangeRate(sourceCurrency, targetCurrency, key))
+        when(exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key))
                 .thenThrow(new RuntimeException("Fetch failed"));
         when(currencyCacheService.getRate(key)).thenReturn(null);
 
         assertThrows(CurrencyRateFetchException.class, () -> currencyService.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString()));
 
         verify(currencyCacheService).getRate(key);
-        verify(currencyLayerClient).fetchExchangeRate(sourceCurrency, targetCurrency, key);
+        verify(exchangeRateChainManager).getRate(sourceCurrency, targetCurrency, key);
     }
 
     @Test
