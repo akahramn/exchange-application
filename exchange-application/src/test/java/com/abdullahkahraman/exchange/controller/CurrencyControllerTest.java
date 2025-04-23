@@ -5,6 +5,7 @@ import com.abdullahkahraman.exchange.dto.CurrencyConversionResponse;
 import com.abdullahkahraman.exchange.dto.ExchangeRateResponse;
 import com.abdullahkahraman.exchange.dto.HistoryResponse;
 import com.abdullahkahraman.exchange.enums.CurrencyCode;
+import com.abdullahkahraman.exchange.exception.InvalidCsvFormatException;
 import com.abdullahkahraman.exchange.exception.MissingSearchCriteriaException;
 import com.abdullahkahraman.exchange.service.CurrencyService;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +65,7 @@ class CurrencyControllerTest {
     @Test
     public void whenConvertCurrencyThrowsException_shouldHandleErrorGracefully() {
         CurrencyConversionRequest request = new CurrencyConversionRequest();
-        IOException exception = new IOException("Test exception");
+        InvalidCsvFormatException exception = new InvalidCsvFormatException("Error reading CSV file");
 
         try {
             Mockito.when(currencyService.convertCurrency(Mockito.eq(request), Mockito.isNull()))
@@ -72,8 +73,8 @@ class CurrencyControllerTest {
 
             currencyController.convert(request, null);
             fail("Expected exception was not thrown");
-        } catch (IOException e) {
-            assertEquals("Test exception", e.getMessage());
+        } catch (InvalidCsvFormatException e) {
+            assertEquals("Error reading CSV file", e.getMessage());
         }
     }
 

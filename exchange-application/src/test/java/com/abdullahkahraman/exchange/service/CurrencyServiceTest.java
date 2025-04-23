@@ -5,6 +5,7 @@ import com.abdullahkahraman.exchange.client.CurrencyLayerClient;
 import com.abdullahkahraman.exchange.dto.*;
 import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.CurrencyRateFetchException;
+import com.abdullahkahraman.exchange.exception.InvalidCsvFormatException;
 import com.abdullahkahraman.exchange.model.Currency;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
@@ -21,7 +22,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -261,7 +261,7 @@ class CurrencyServiceTest {
     }
 
     @Test
-    public void whenFileContainsValidRequests_shouldReturnConversionResponses() throws IOException {
+    public void whenFileContainsValidRequests_shouldReturnConversionResponses() {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "test.csv", "text/csv", "dummy content".getBytes()
         );
@@ -295,7 +295,7 @@ class CurrencyServiceTest {
     }
 
     @Test
-    void whenFileIsEmpty_shouldReturnEmptyResponse() throws IOException {
+    void whenFileIsEmpty_shouldReturnEmptyResponse() {
         MultipartFile file = mock(MultipartFile.class);
 
         when(conversionFileParserFactory.getParser(any(MultipartFile.class))).thenReturn(conversionFileParser);
@@ -311,13 +311,13 @@ class CurrencyServiceTest {
     }
 
     @Test
-    public void whenFileHasInvalidFormat_shouldThrowIOException() throws IOException {
+    public void whenFileHasInvalidFormat_shouldThrowIOException() {
         MultipartFile file = mock(MultipartFile.class);
 
         when(conversionFileParserFactory.getParser(any(MultipartFile.class))).thenReturn(conversionFileParser);
-        when(conversionFileParser.parse(file)).thenThrow(new IOException("Invalid file format"));
+        when(conversionFileParser.parse(file)).thenThrow(new InvalidCsvFormatException("Error reading CSV file"));
 
-        assertThrows(IOException.class, () -> currencyService.convertFileCurrency(file));
+        assertThrows(InvalidCsvFormatException.class, () -> currencyService.convertFileCurrency(file));
 
         verify(conversionFileParserFactory).getParser(file);
         verify(conversionFileParser).parse(file);
@@ -440,7 +440,7 @@ class CurrencyServiceTest {
     }
 
     @Test
-    void whenConvertCurrencyOnlyRequestProvided_shouldReturnSingleResponse() throws IOException {
+    void whenConvertCurrencyOnlyRequestProvided_shouldReturnSingleResponse() {
         CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
         CurrencyConversionResponse mockResponse = new CurrencyConversionResponse("tx1", CurrencyCode.USD, CurrencyCode.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(110));
 
@@ -458,7 +458,7 @@ class CurrencyServiceTest {
     }
 
     @Test
-    void whenConvertCurrencyOnlyFileProvided_shouldReturnFileResponses() throws IOException {
+    void whenConvertCurrencyOnlyFileProvided_shouldReturnFileResponses() {
         // Arrange
         MockMultipartFile file = new MockMultipartFile("file", "test.csv", "text/csv", "content".getBytes());
         CurrencyConversionResponse fileResponse = new CurrencyConversionResponse("tx2", CurrencyCode.GBP, CurrencyCode.USD, BigDecimal.valueOf(50), BigDecimal.valueOf(65));
@@ -477,7 +477,7 @@ class CurrencyServiceTest {
     }
 
     @Test
-    void whenConvertCurrencyBothRequestAndFileProvided_shouldReturnBothResponses() throws IOException {
+    void whenConvertCurrencyBothRequestAndFileProvided_shouldReturnBothResponses() {
         // Arrange
         CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD, CurrencyCode.EUR);
         CurrencyConversionResponse response1 = new CurrencyConversionResponse("tx1", CurrencyCode.USD, CurrencyCode.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(110));
@@ -500,7 +500,7 @@ class CurrencyServiceTest {
     }
 
     @Test
-    void whenConvertCurrencyBothInputsAreNull_shouldReturnEmptyList() throws IOException {
+    void whenConvertCurrencyBothInputsAreNull_shouldReturnEmptyList() {
         List<CurrencyConversionResponse> result = currencyService.convertCurrency(null, null);
 
         assertNotNull(result);
