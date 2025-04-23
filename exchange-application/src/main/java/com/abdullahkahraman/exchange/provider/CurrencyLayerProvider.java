@@ -13,6 +13,15 @@ public class CurrencyLayerProvider implements ExchangeRateProvider{
 
     private final CurrencyLayerClient client;
 
+    /**
+     * Retrieves the exchange rate between a source currency and a target currency
+     * based on a given key.
+     *
+     * @param source the source currency code
+     * @param target the target currency code
+     * @param key the key used to identify the specific exchange rate within the response
+     * @return the exchange rate as a Double, or throws an exception if not found
+     */
     @Override
     public Double getRate(CurrencyCode source, CurrencyCode target, String key) {
         return client.fetchExchangeRate(source, target, key);

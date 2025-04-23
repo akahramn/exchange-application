@@ -12,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 public class FixerApiClient {
@@ -25,6 +23,18 @@ public class FixerApiClient {
     private String FIXER_API_ACCESS_KEY;
     private final RestTemplate restTemplate;
 
+    /**
+     * Fetches the exchange rate for a specified currency pair using the Fixer API.
+     * Note: The Fixer API (free tier) only supports EUR as the base currency.
+     *
+     * @param source the source currency code from which the conversion starts (must be EUR)
+     * @param target the target currency code to which the conversion is performed
+     * @param key the key used to fetch a specific rate or to identify context for the currency pair
+     * @return the exchange rate as a Double for the given source and target currency
+     * @throws UnsupportedOperationException if the source currency is not EUR (required by Fixer API free tier)
+     * @throws CurrencyRateFetchException if the API call fails or the response indicates an error
+     * @throws RateNotFoundException if the exchange rate for the given currency key is not found
+     */
     public Double fetchExchangeRate(CurrencyCode source, CurrencyCode target, String key) {
         if (!CurrencyCode.EUR.equals(source)) {
             throw new UnsupportedOperationException("Fixer API only supports EUR as base currency (in free tier)");
