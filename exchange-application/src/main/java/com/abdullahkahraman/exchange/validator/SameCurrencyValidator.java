@@ -1,7 +1,9 @@
 package com.abdullahkahraman.exchange.validator;
 
 import com.abdullahkahraman.exchange.dto.CurrencyConversionRequest;
+import org.springframework.stereotype.Component;
 
+@Component
 public class SameCurrencyValidator implements Validator {
     @Override
     public void validate(CurrencyConversionRequest request) {

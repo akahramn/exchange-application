@@ -27,6 +27,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleArgumentValidation(IllegalArgumentException ex) {
+        String message = ex.getMessage();
+        ErrorResponse response = new ErrorResponse(message, "VALIDATION_ERROR", LocalDateTime.now());
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
         ErrorResponse response = new ErrorResponse("Unexpected error occurred", "INTERNAL_ERROR", LocalDateTime.now());
