@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-class CurrencyLayerClientTest {
+class TransactionLayerClientTest {
     private CurrencyLayerClient currencyLayerClient;
     private RestTemplate restTemplate;
 

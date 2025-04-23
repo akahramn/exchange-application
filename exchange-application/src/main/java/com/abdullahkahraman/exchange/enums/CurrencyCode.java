@@ -29,10 +29,6 @@ public enum CurrencyCode {
         this.description = description;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public static boolean isValid(String code) {
         return Arrays.stream(CurrencyCode.values())
                 .anyMatch(currency -> currency.name().equalsIgnoreCase(code));

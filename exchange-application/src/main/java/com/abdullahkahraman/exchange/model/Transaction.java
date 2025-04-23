@@ -13,12 +13,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "currency")
+@Table(name = "transaction")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Currency {
+public class Transaction {
     @Id
     private String transactionId;
 

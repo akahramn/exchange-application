@@ -4,9 +4,8 @@ import com.abdullahkahraman.exchange.dto.CurrencyConversionRequest;
 import com.abdullahkahraman.exchange.dto.CurrencyConversionResponse;
 import com.abdullahkahraman.exchange.dto.ExchangeRateResponse;
 import com.abdullahkahraman.exchange.dto.HistoryResponse;
-import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.MissingSearchCriteriaException;
-import com.abdullahkahraman.exchange.service.CurrencyService;
+import com.abdullahkahraman.exchange.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -31,11 +30,11 @@ import java.util.List;
 @RestController
 @RequestMapping("api/v1/currency")
 @RequiredArgsConstructor
-public class CurrencyController {
+public class TransactionController {
 
-    private static final Logger logger = LoggerFactory.getLogger(CurrencyController.class);
+    private static final Logger logger = LoggerFactory.getLogger(TransactionController.class);
 
-    private final CurrencyService currencyService;
+    private final TransactionService transactionService;
 
     /**
      * Retrieves the latest exchange rate between the given source and target currencies.
@@ -70,7 +69,7 @@ public class CurrencyController {
     ) {
         logger.info("Received request to get exchange rate: {} -> {}", sourceCurrency, targetCurrency);
 
-        ExchangeRateResponse response = currencyService.getExchangeRate(sourceCurrency, targetCurrency);
+        ExchangeRateResponse response = transactionService.getExchangeRate(sourceCurrency, targetCurrency);
 
         logger.debug("Exchange rate response: {}", response);
 
@@ -122,7 +121,7 @@ public class CurrencyController {
                     file.getOriginalFilename(), file.getSize());
         }
 
-        List<CurrencyConversionResponse> result = currencyService.convertCurrency(request, file);
+        List<CurrencyConversionResponse> result = transactionService.convertCurrency(request, file);
 
         logger.debug("Currency conversion result: {}", result);
 
@@ -165,7 +164,7 @@ public class CurrencyController {
 
         validateSearchCriteria(transactionId, date);
 
-        HistoryResponse response = currencyService.getHistory(transactionId, date, pageable);
+        HistoryResponse response = transactionService.getHistory(transactionId, date, pageable);
 
         logger.debug("Returning {} records in history response", response.getContent().size());
 

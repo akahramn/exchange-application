@@ -1,6 +1,6 @@
 package com.abdullahkahraman.exchange.specification;
 
-import com.abdullahkahraman.exchange.model.Currency;
+import com.abdullahkahraman.exchange.model.Transaction;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.ObjectUtils;
@@ -22,7 +22,7 @@ public class ConversionTransactionSpecification {
      *             within the start and end of the provided date
      * @return a Specification for filtering Currency entities based on the provided parameters
      */
-    public static Specification<Currency> filterBy(String transactionId, LocalDate date) {
+    public static Specification<Transaction> filterBy(String transactionId, LocalDate date) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 

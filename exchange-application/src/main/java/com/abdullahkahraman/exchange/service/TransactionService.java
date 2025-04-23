@@ -7,11 +7,11 @@ import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.CurrencyRateFetchException;
 import com.abdullahkahraman.exchange.exception.InvalidCurrencyException;
 import com.abdullahkahraman.exchange.exception.TransactionNotFoundException;
-import com.abdullahkahraman.exchange.model.Currency;
+import com.abdullahkahraman.exchange.model.Transaction;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
 import com.abdullahkahraman.exchange.provider.ExchangeRateChainManager;
-import com.abdullahkahraman.exchange.repository.CurrencyRepository;
+import com.abdullahkahraman.exchange.repository.TransactionRepository;
 import com.abdullahkahraman.exchange.specification.ConversionTransactionSpecification;
 import com.abdullahkahraman.exchange.validator.CurrencyCodeValidator;
 import com.abdullahkahraman.exchange.validator.Validator;
@@ -35,12 +35,12 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class CurrencyService {
+public class TransactionService {
 
     private static final long EXCHANGE_RATE_CACHE_TTL_MINUTES = 60;
-    private static final Logger logger = LoggerFactory.getLogger(CurrencyService.class);
+    private static final Logger logger = LoggerFactory.getLogger(TransactionService.class);
 
-    private final CurrencyRepository currencyRepository;
+    private final TransactionRepository transactionRepository;
     private final CurrencyCacheService currencyCacheService;
     private final CurrencyLayerClient currencyLayerClient;
     private final ConversionFileParserFactory conversionFileParserFactory;
@@ -59,8 +59,8 @@ public class CurrencyService {
     public ExchangeRateResponse getExchangeRate(String sourceCurrency, String targetCurrency) {
         logger.info("Fetching exchange rate from {} to {}", sourceCurrency, targetCurrency);
 
-        CurrencyCode source = toValidCurrency(sourceCurrency, "sourceCurrency");
-        CurrencyCode target = toValidCurrency(targetCurrency, "targetCurrency");
+        CurrencyCode source = convertCurrencyStrToCode(sourceCurrency, "sourceCurrency");
+        CurrencyCode target = convertCurrencyStrToCode(targetCurrency, "targetCurrency");
 
         Double rate = getRate(source, target);
 
@@ -237,7 +237,7 @@ public class CurrencyService {
      * @param result the converted amount as a {@code BigDecimal}
      */
     public void saveTransaction(String transactionId, CurrencyConversionRequest request, BigDecimal result) {
-        Currency transaction = Currency.builder()
+        Transaction transaction = Transaction.builder()
                 .transactionDate(LocalDateTime.now())
                 .transactionId(transactionId)
                 .amount(request.getAmount())
@@ -247,7 +247,7 @@ public class CurrencyService {
                 .build();
 
         try {
-            currencyRepository.save(transaction);
+            transactionRepository.save(transaction);
             logger.info("Saved currency conversion transaction: ID={}, from {} to {}, amount={}, result={}",
                     transactionId,
                     request.getSourceCurrency(),
@@ -272,8 +272,8 @@ public class CurrencyService {
         logger.info("Fetching conversion history with transactionId='{}' and date='{}'", transactionId, date);
 
         validateTransactionIdExists(transactionId);
-        Specification<Currency> spec = ConversionTransactionSpecification.filterBy(transactionId, date);
-        Page<Currency> currencyPage = currencyRepository.findAll(spec, pageable);
+        Specification<Transaction> spec = ConversionTransactionSpecification.filterBy(transactionId, date);
+        Page<Transaction> currencyPage = transactionRepository.findAll(spec, pageable);
 
         logger.debug("Fetched {} records from DB for history query", currencyPage.getTotalElements());
 
@@ -292,7 +292,7 @@ public class CurrencyService {
      * @throws TransactionNotFoundException if the transaction ID does not exist in the repository
      */
     private void validateTransactionIdExists(String transactionId) {
-        if (transactionId != null && !transactionId.isBlank() && !currencyRepository.existsById(transactionId)) {
+        if (transactionId != null && !transactionId.isBlank() && !transactionRepository.existsById(transactionId)) {
             throw new TransactionNotFoundException(transactionId);
         }
     }
@@ -300,15 +300,15 @@ public class CurrencyService {
     /**
      * Maps a Currency object to a CurrencyDto object.
      *
-     * @param currency the Currency object to be mapped
+     * @param transaction the Currency object to be mapped
      * @return a CurrencyDto object containing the mapped data from the provided Currency object
      */
-    private CurrencyDto mapCurrencyToDto(Currency currency) {
+    private CurrencyDto mapCurrencyToDto(Transaction transaction) {
         return new CurrencyDto(
-                currency.getTransactionId(),
-                currency.getSourceCurrency().name(),
-                currency.getTargetCurrency().name(),
-                currency.getResult()
+                transaction.getTransactionId(),
+                transaction.getSourceCurrency().name(),
+                transaction.getTargetCurrency().name(),
+                transaction.getResult()
         );
     }
 
@@ -341,7 +341,7 @@ public class CurrencyService {
      * @return the corresponding CurrencyCode enum
      * @throws InvalidCurrencyException if validation fails
      */
-    private CurrencyCode toValidCurrency(String currencyStr, String fieldName) {
+    private CurrencyCode convertCurrencyStrToCode(String currencyStr, String fieldName) {
         currencyCodeValidator.validate(currencyStr, fieldName);
         return CurrencyCode.valueOf(currencyStr.trim().toUpperCase());
     }

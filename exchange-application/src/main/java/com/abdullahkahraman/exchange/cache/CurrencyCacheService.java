@@ -1,6 +1,5 @@
 package com.abdullahkahraman.exchange.cache;
 
-import com.abdullahkahraman.exchange.service.CurrencyService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

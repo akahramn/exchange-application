@@ -6,11 +6,11 @@ import com.abdullahkahraman.exchange.dto.*;
 import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.CurrencyRateFetchException;
 import com.abdullahkahraman.exchange.exception.InvalidCsvFormatException;
-import com.abdullahkahraman.exchange.model.Currency;
+import com.abdullahkahraman.exchange.model.Transaction;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
 import com.abdullahkahraman.exchange.provider.ExchangeRateChainManager;
-import com.abdullahkahraman.exchange.repository.CurrencyRepository;
+import com.abdullahkahraman.exchange.repository.TransactionRepository;
 import com.abdullahkahraman.exchange.validator.CurrencyCodeValidator;
 import com.abdullahkahraman.exchange.validator.Validator;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,12 +34,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class CurrencyServiceTest {
+class TransactionServiceTest {
 
     private ConversionFileParserFactory conversionFileParserFactory;
-    private CurrencyService currencyService;
+    private TransactionService transactionService;
     private CurrencyLayerClient currencyLayerClient;
-    private CurrencyRepository currencyRepository;
+    private TransactionRepository transactionRepository;
     private CurrencyCacheService currencyCacheService;
     private ConversionFileParser conversionFileParser;
     private Validator validator1;
@@ -51,14 +51,14 @@ class CurrencyServiceTest {
     void setUp() {
         conversionFileParser = Mockito.mock(ConversionFileParser.class);
         currencyLayerClient = Mockito.mock(CurrencyLayerClient.class);
-        currencyRepository = Mockito.mock(CurrencyRepository.class);
+        transactionRepository = Mockito.mock(TransactionRepository.class);
         currencyCacheService = Mockito.mock(CurrencyCacheService.class);
         validator1 = Mockito.mock(Validator.class);
         validator2 = Mockito.mock(Validator.class);
         conversionFileParserFactory = Mockito.mock(ConversionFileParserFactory.class);
         currencyCodeValidator = Mockito.mock(CurrencyCodeValidator.class);
         exchangeRateChainManager = Mockito.mock(ExchangeRateChainManager.class);
-        currencyService = new CurrencyService(currencyRepository,
+        transactionService = new TransactionService(transactionRepository,
                 currencyCacheService,
                 currencyLayerClient,
                 conversionFileParserFactory,
@@ -74,7 +74,7 @@ class CurrencyServiceTest {
 
         Mockito.when(currencyCacheService.exists(key)).thenReturn(true);
         Mockito.when(currencyCacheService.getRate(key)).thenReturn(38.0);
-        Double rate = currencyService.getRate(sourceCurrency, targetCurrency);
+        Double rate = transactionService.getRate(sourceCurrency, targetCurrency);
 
         assertNotNull(rate);
         assertEquals(38.0, rate);
@@ -95,7 +95,7 @@ class CurrencyServiceTest {
         when(currencyCacheService.exists(key)).thenReturn(false);
         when(exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key)).thenReturn(fetchedRate);
 
-        Double rate = currencyService.getRate(sourceCurrency, targetCurrency);
+        Double rate = transactionService.getRate(sourceCurrency, targetCurrency);
 
         assertNotNull(rate);
         assertEquals(fetchedRate, rate);
@@ -115,7 +115,7 @@ class CurrencyServiceTest {
         when(exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key)).thenThrow(new RuntimeException("Fetch failed"));
         when(currencyCacheService.getRate(key)).thenReturn(fallbackRate);
 
-        Double rate = currencyService.getRate(sourceCurrency, targetCurrency);
+        Double rate = transactionService.getRate(sourceCurrency, targetCurrency);
 
         assertNotNull(rate);
         assertEquals(fallbackRate, rate);
@@ -134,7 +134,7 @@ class CurrencyServiceTest {
         when(exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key)).thenThrow(new RuntimeException("Fetch failed"));
         when(currencyCacheService.getRate(key)).thenReturn(null);
 
-        assertThrows(CurrencyRateFetchException.class, () -> currencyService.getRate(sourceCurrency, targetCurrency));
+        assertThrows(CurrencyRateFetchException.class, () -> transactionService.getRate(sourceCurrency, targetCurrency));
 
         verify(currencyCacheService).getRate(key);
     }
@@ -149,7 +149,7 @@ class CurrencyServiceTest {
         when(currencyCacheService.exists(key)).thenReturn(true);
         when(currencyCacheService.getRate(key)).thenReturn(rate);
 
-        ExchangeRateResponse response = currencyService.getExchangeRate(sourceCurrency, targetCurrency);
+        ExchangeRateResponse response = transactionService.getExchangeRate(sourceCurrency, targetCurrency);
 
         assertNotNull(response);
         assertEquals(sourceCurrency, response.getSourceCurrency().toString());
@@ -171,7 +171,7 @@ class CurrencyServiceTest {
                 .thenThrow(new RuntimeException("Fetch failed"));
         when(currencyCacheService.getRate(key)).thenReturn(null);
 
-        assertThrows(CurrencyRateFetchException.class, () -> currencyService.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString()));
+        assertThrows(CurrencyRateFetchException.class, () -> transactionService.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString()));
 
         verify(currencyCacheService).getRate(key);
         verify(exchangeRateChainManager).getRate(sourceCurrency, targetCurrency, key);
@@ -182,11 +182,11 @@ class CurrencyServiceTest {
         String transactionId = "abc123";
         LocalDate date = null;
         Pageable pageable = PageRequest.of(0, 10);
-        List<Currency> currencyEntities = new ArrayList<>();
-        currencyEntities.add(new Currency(
+        List<Transaction> transactionEntities = new ArrayList<>();
+        transactionEntities.add(new Transaction(
                 "tx123", CurrencyCode.USD, CurrencyCode.TRY, new BigDecimal("100"), new BigDecimal("3245.60"), LocalDateTime.now()
         ));
-        Page<Currency> currencyPage = new PageImpl<>(currencyEntities, pageable, 1);
+        Page<Transaction> currencyPage = new PageImpl<>(transactionEntities, pageable, 1);
 
         HistoryResponse expectedResponse = new HistoryResponse(
                 currencyPage.map(entity -> new CurrencyDto(
@@ -197,16 +197,16 @@ class CurrencyServiceTest {
                 ))
         );
 
-        when(currencyRepository.existsById(transactionId)).thenReturn(true);
-        when(currencyRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(currencyPage);
+        when(transactionRepository.existsById(transactionId)).thenReturn(true);
+        when(transactionRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(currencyPage);
 
-        HistoryResponse result = currencyService.getHistory(transactionId, date, pageable);
+        HistoryResponse result = transactionService.getHistory(transactionId, date, pageable);
 
         assertNotNull(expectedResponse);
         assertEquals(expectedResponse, result);
 
-        verify(currencyRepository).existsById(transactionId);
-        verify(currencyRepository).findAll(any(Specification.class), any(Pageable.class));
+        verify(transactionRepository).existsById(transactionId);
+        verify(transactionRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
@@ -214,11 +214,11 @@ class CurrencyServiceTest {
         String transactionId = null;
         LocalDate date = LocalDate.now();
         Pageable pageable = PageRequest.of(0, 10);
-        List<Currency> currencyEntities = new ArrayList<>();
-        currencyEntities.add(new Currency(
+        List<Transaction> transactionEntities = new ArrayList<>();
+        transactionEntities.add(new Transaction(
                 "tx123", CurrencyCode.USD, CurrencyCode.TRY, new BigDecimal("100"), new BigDecimal("3245.60"), LocalDateTime.now()
         ));
-        Page<Currency> currencyPage = new PageImpl<>(currencyEntities, pageable, 1);
+        Page<Transaction> currencyPage = new PageImpl<>(transactionEntities, pageable, 1);
 
         HistoryResponse expectedResponse = new HistoryResponse(
                 currencyPage.map(entity -> new CurrencyDto(
@@ -229,14 +229,14 @@ class CurrencyServiceTest {
                 ))
         );
 
-        when(currencyRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(currencyPage);
+        when(transactionRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(currencyPage);
 
-        HistoryResponse result = currencyService.getHistory(transactionId, date, pageable);
+        HistoryResponse result = transactionService.getHistory(transactionId, date, pageable);
 
         assertNotNull(expectedResponse);
         assertEquals(result, expectedResponse);
 
-        verify(currencyRepository).findAll(any(Specification.class), any(Pageable.class));
+        verify(transactionRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
@@ -244,7 +244,7 @@ class CurrencyServiceTest {
         BigDecimal amount = BigDecimal.valueOf(100.00);
         Double rate = 1.5;
 
-        BigDecimal result = CurrencyService.calculateAmount(amount, rate);
+        BigDecimal result = TransactionService.calculateAmount(amount, rate);
 
         assertNotNull(result);
         assertEquals(BigDecimal.valueOf(150.0000).setScale(4, RoundingMode.HALF_UP), result);
@@ -257,14 +257,14 @@ class CurrencyServiceTest {
 
         BigDecimal finalAmount = amount;
         Double finalRate = rate;
-        assertThrows(IllegalArgumentException.class, () -> CurrencyService.calculateAmount(finalAmount, finalRate));
+        assertThrows(IllegalArgumentException.class, () -> TransactionService.calculateAmount(finalAmount, finalRate));
 
         amount = BigDecimal.valueOf(100.00);
         rate = null;
 
         BigDecimal finalAmount1 = amount;
         Double finalRate1 = rate;
-        assertThrows(IllegalArgumentException.class, () -> CurrencyService.calculateAmount(finalAmount1, finalRate1));
+        assertThrows(IllegalArgumentException.class, () -> TransactionService.calculateAmount(finalAmount1, finalRate1));
     }
 
     @Test
@@ -286,7 +286,7 @@ class CurrencyServiceTest {
         when(conversionFileParserFactory.getParser(file)).thenReturn(conversionFileParser);
         when(conversionFileParser.parse(file)).thenReturn(mockRequests);
 
-        CurrencyService spyService = spy(currencyService);
+        TransactionService spyService = spy(transactionService);
 
         doReturn(mockResponses.get(0))
                 .doReturn(mockResponses.get(1))
@@ -308,7 +308,7 @@ class CurrencyServiceTest {
         when(conversionFileParserFactory.getParser(any(MultipartFile.class))).thenReturn(conversionFileParser);
         when(conversionFileParser.parse(file)).thenReturn(new ArrayList<>());
 
-        List<CurrencyConversionResponse> responses = currencyService.convertFileCurrency(file);
+        List<CurrencyConversionResponse> responses = transactionService.convertFileCurrency(file);
 
         assertNotNull(responses);
         assertTrue(responses.isEmpty());
@@ -324,7 +324,7 @@ class CurrencyServiceTest {
         when(conversionFileParserFactory.getParser(any(MultipartFile.class))).thenReturn(conversionFileParser);
         when(conversionFileParser.parse(file)).thenThrow(new InvalidCsvFormatException("Error reading CSV file"));
 
-        assertThrows(InvalidCsvFormatException.class, () -> currencyService.convertFileCurrency(file));
+        assertThrows(InvalidCsvFormatException.class, () -> transactionService.convertFileCurrency(file));
 
         verify(conversionFileParserFactory).getParser(file);
         verify(conversionFileParser).parse(file);
@@ -336,7 +336,7 @@ class CurrencyServiceTest {
         CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
         BigDecimal result = BigDecimal.valueOf(110);
 
-        Currency currency = Currency.builder()
+        Transaction transaction = Transaction.builder()
                 .transactionId(transactionId)
                 .sourceCurrency(CurrencyCode.valueOf(request.getSourceCurrency()))
                 .targetCurrency(CurrencyCode.valueOf(request.getTargetCurrency()))
@@ -344,11 +344,11 @@ class CurrencyServiceTest {
                 .result(result)
                 .build();
 
-        when(currencyRepository.save(any(Currency.class))).thenReturn(currency);
+        when(transactionRepository.save(any(Transaction.class))).thenReturn(transaction);
 
-        currencyService.saveTransaction(transactionId, request, result);
+        transactionService.saveTransaction(transactionId, request, result);
 
-        verify(currencyRepository).save(any(Currency.class));
+        verify(transactionRepository).save(any(Transaction.class));
     }
 
     @Test
@@ -363,7 +363,7 @@ class CurrencyServiceTest {
 
         BigDecimal expectedResult = BigDecimal.valueOf(150.0).setScale(4, RoundingMode.HALF_UP);
 
-        CurrencyConversionResponse response = currencyService.convertSingleCurrency(request);
+        CurrencyConversionResponse response = transactionService.convertSingleCurrency(request);
 
         assertNotNull(response);
         assertEquals(request.getSourceCurrency(), response.getSourceCurrency().toString());
@@ -382,7 +382,7 @@ class CurrencyServiceTest {
 
         doThrow(new IllegalArgumentException("Invalid request")).when(validator1).validate(request);
 
-        assertThrows(IllegalArgumentException.class, () -> currencyService.convertSingleCurrency(request));
+        assertThrows(IllegalArgumentException.class, () -> transactionService.convertSingleCurrency(request));
 
         verify(validator1).validate(request);
         verifyNoMoreInteractions(validator2);
@@ -399,7 +399,7 @@ class CurrencyServiceTest {
         when(currencyCacheService.exists(key)).thenReturn(true);
         when(currencyCacheService.getRate(key)).thenReturn(rate);
 
-        currencyService.convertSingleCurrency(request);
+        transactionService.convertSingleCurrency(request);
     }
 
     @Test
@@ -413,9 +413,9 @@ class CurrencyServiceTest {
         when(currencyCacheService.exists(key)).thenReturn(true);
         when(currencyCacheService.getRate(key)).thenReturn(rate);
 
-        currencyService.convertSingleCurrency(request);
+        transactionService.convertSingleCurrency(request);
 
-        verify(currencyRepository).save(argThat(transaction ->
+        verify(transactionRepository).save(argThat(transaction ->
                 request.getSourceCurrency().equals(transaction.getSourceCurrency().toString()) &&
                         request.getTargetCurrency().equals(transaction.getTargetCurrency().toString()) &&
                         expectedResult.equals(transaction.getResult()) &&
@@ -436,7 +436,7 @@ class CurrencyServiceTest {
         when(currencyCacheService.exists(key)).thenReturn(true);
         when(currencyCacheService.getRate(key)).thenReturn(rate);
 
-        CurrencyConversionResponse response = currencyService.convertSingleCurrency(request);
+        CurrencyConversionResponse response = transactionService.convertSingleCurrency(request);
 
         assertNotNull(response);
         assertEquals(request.getSourceCurrency(), response.getSourceCurrency().toString());
@@ -451,7 +451,7 @@ class CurrencyServiceTest {
         CurrencyConversionRequest request = new CurrencyConversionRequest(BigDecimal.valueOf(100), CurrencyCode.USD.toString(), CurrencyCode.EUR.toString());
         CurrencyConversionResponse mockResponse = new CurrencyConversionResponse("tx1", CurrencyCode.USD, CurrencyCode.EUR, BigDecimal.valueOf(100), BigDecimal.valueOf(110));
 
-        CurrencyService spyService = Mockito.spy(currencyService);
+        TransactionService spyService = Mockito.spy(transactionService);
         doReturn(mockResponse).when(spyService).convertSingleCurrency(request);
 
         // Act
@@ -470,7 +470,7 @@ class CurrencyServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "test.csv", "text/csv", "content".getBytes());
         CurrencyConversionResponse fileResponse = new CurrencyConversionResponse("tx2", CurrencyCode.GBP, CurrencyCode.USD, BigDecimal.valueOf(50), BigDecimal.valueOf(65));
 
-        CurrencyService spyService = Mockito.spy(currencyService);
+        TransactionService spyService = Mockito.spy(transactionService);
         doReturn(List.of(fileResponse)).when(spyService).convertFileCurrency(file);
 
         // Act
@@ -492,7 +492,7 @@ class CurrencyServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "test.csv", "text/csv", "content".getBytes());
         CurrencyConversionResponse response2 = new CurrencyConversionResponse("tx2", CurrencyCode.GBP, CurrencyCode.USD, BigDecimal.valueOf(50), BigDecimal.valueOf(65));
 
-        CurrencyService spyService = Mockito.spy(currencyService);
+        TransactionService spyService = Mockito.spy(transactionService);
         doReturn(response1).when(spyService).convertSingleCurrency(request);
         doReturn(List.of(response2)).when(spyService).convertFileCurrency(file);
 
@@ -508,7 +508,7 @@ class CurrencyServiceTest {
 
     @Test
     void whenConvertCurrencyBothInputsAreNull_shouldReturnEmptyList() {
-        List<CurrencyConversionResponse> result = currencyService.convertCurrency(null, null);
+        List<CurrencyConversionResponse> result = transactionService.convertCurrency(null, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());

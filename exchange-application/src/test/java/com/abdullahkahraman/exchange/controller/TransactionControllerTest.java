@@ -7,7 +7,7 @@ import com.abdullahkahraman.exchange.dto.HistoryResponse;
 import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.InvalidCsvFormatException;
 import com.abdullahkahraman.exchange.exception.MissingSearchCriteriaException;
-import com.abdullahkahraman.exchange.service.CurrencyService;
+import com.abdullahkahraman.exchange.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -19,15 +19,15 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class CurrencyControllerTest {
+class TransactionControllerTest {
 
-    private CurrencyService currencyService;
-    private CurrencyController currencyController;
+    private TransactionService transactionService;
+    private TransactionController transactionController;
 
     @BeforeEach
     void setUp() {
-        currencyService = Mockito.mock(CurrencyService.class);
-        currencyController = new CurrencyController(currencyService);
+        transactionService = Mockito.mock(TransactionService.class);
+        transactionController = new TransactionController(transactionService);
     }
 
     @Test
@@ -35,10 +35,10 @@ class CurrencyControllerTest {
         CurrencyConversionRequest request = new CurrencyConversionRequest();
         List<CurrencyConversionResponse> mockResponse = List.of(new CurrencyConversionResponse());
 
-        Mockito.when(currencyService.convertCurrency(Mockito.eq(request), Mockito.isNull()))
+        Mockito.when(transactionService.convertCurrency(Mockito.eq(request), Mockito.isNull()))
                 .thenReturn(mockResponse);
 
-        ResponseEntity<List<CurrencyConversionResponse>> response = currencyController.convert(request, null);
+        ResponseEntity<List<CurrencyConversionResponse>> response = transactionController.convert(request, null);
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
@@ -50,10 +50,10 @@ class CurrencyControllerTest {
         MultipartFile mockFile = Mockito.mock(MultipartFile.class);
         List<CurrencyConversionResponse> mockResponse = List.of(new CurrencyConversionResponse());
 
-        Mockito.when(currencyService.convertCurrency(Mockito.isNull(), Mockito.eq(mockFile)))
+        Mockito.when(transactionService.convertCurrency(Mockito.isNull(), Mockito.eq(mockFile)))
                 .thenReturn(mockResponse);
 
-        ResponseEntity<List<CurrencyConversionResponse>> response = currencyController.convert(null, mockFile);
+        ResponseEntity<List<CurrencyConversionResponse>> response = transactionController.convert(null, mockFile);
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
@@ -66,10 +66,10 @@ class CurrencyControllerTest {
         InvalidCsvFormatException exception = new InvalidCsvFormatException("Error reading CSV file");
 
         try {
-            Mockito.when(currencyService.convertCurrency(Mockito.eq(request), Mockito.isNull()))
+            Mockito.when(transactionService.convertCurrency(Mockito.eq(request), Mockito.isNull()))
                     .thenThrow(exception);
 
-            currencyController.convert(request, null);
+            transactionController.convert(request, null);
             fail("Expected exception was not thrown");
         } catch (InvalidCsvFormatException e) {
             assertEquals("Error reading CSV file", e.getMessage());
@@ -82,10 +82,10 @@ class CurrencyControllerTest {
         CurrencyCode targetCurrency = CurrencyCode.EUR;
         ExchangeRateResponse mockResponse = new ExchangeRateResponse();
 
-        Mockito.when(currencyService.getExchangeRate(Mockito.eq(sourceCurrency.toString()), Mockito.eq(targetCurrency.toString())))
+        Mockito.when(transactionService.getExchangeRate(Mockito.eq(sourceCurrency.toString()), Mockito.eq(targetCurrency.toString())))
                 .thenReturn(mockResponse);
 
-        ResponseEntity<ExchangeRateResponse> response = currencyController.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString());
+        ResponseEntity<ExchangeRateResponse> response = transactionController.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString());
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
@@ -99,10 +99,10 @@ class CurrencyControllerTest {
         RuntimeException exception = new RuntimeException("Test exception");
 
         try {
-            Mockito.when(currencyService.getExchangeRate(Mockito.eq(sourceCurrency.toString()), Mockito.eq(targetCurrency.toString())))
+            Mockito.when(transactionService.getExchangeRate(Mockito.eq(sourceCurrency.toString()), Mockito.eq(targetCurrency.toString())))
                     .thenThrow(exception);
 
-            currencyController.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString());
+            transactionController.getExchangeRate(sourceCurrency.toString(), targetCurrency.toString());
             fail("Expected exception was not thrown");
         } catch (RuntimeException e) {
             assertEquals("Test exception", e.getMessage());
@@ -115,10 +115,10 @@ class CurrencyControllerTest {
         Pageable pageable = Mockito.mock(Pageable.class);
         HistoryResponse mockResponse = Mockito.mock(HistoryResponse.class);
 
-        Mockito.when(currencyService.getHistory(Mockito.eq(transactionId), Mockito.isNull(), Mockito.eq(pageable)))
+        Mockito.when(transactionService.getHistory(Mockito.eq(transactionId), Mockito.isNull(), Mockito.eq(pageable)))
                 .thenReturn(mockResponse);
 
-        ResponseEntity<HistoryResponse> response = currencyController.getHistory(transactionId, null, pageable);
+        ResponseEntity<HistoryResponse> response = transactionController.getHistory(transactionId, null, pageable);
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
@@ -131,10 +131,10 @@ class CurrencyControllerTest {
         Pageable pageable = Mockito.mock(Pageable.class);
         HistoryResponse mockResponse = Mockito.mock(HistoryResponse.class);
 
-        Mockito.when(currencyService.getHistory(Mockito.isNull(), Mockito.eq(date), Mockito.eq(pageable)))
+        Mockito.when(transactionService.getHistory(Mockito.isNull(), Mockito.eq(date), Mockito.eq(pageable)))
                 .thenReturn(mockResponse);
 
-        ResponseEntity<HistoryResponse> response = currencyController.getHistory(null, date, pageable);
+        ResponseEntity<HistoryResponse> response = transactionController.getHistory(null, date, pageable);
 
         assertNotNull(response);
         assertEquals(200, response.getStatusCodeValue());
@@ -146,7 +146,7 @@ class CurrencyControllerTest {
         Pageable pageable = Mockito.mock(Pageable.class);
 
         try {
-            currencyController.getHistory(null, null, pageable);
+            transactionController.getHistory(null, null, pageable);
             fail("Expected MissingSearchCriteriaException was not thrown");
         } catch (MissingSearchCriteriaException e) {
             assertNotNull(e);
