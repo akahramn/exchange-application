@@ -7,7 +7,7 @@ This API allows users to convert currencies using real-time exchange rates. It s
 - Fetching exchange rate between two currencies
 - Retrieving conversion history with filters
 
-**Base URL:** `http://localhost:8080/api/v1/currency`  
+**Base URL:** `http://localhost:8080/api/v1/transaction`  
 **API Version:** 1.0
 
 
@@ -15,7 +15,7 @@ This API allows users to convert currencies using real-time exchange rates. It s
 
 | Endpoints | Method     | Description                |
 | :-------- | :------- | :------------------------- |
-| `/convert` | `POST` | Perform single or batch currency conversion |
+| `/convert` | `POST` | Perform single or batch transaction conversion |
 | `/rate` | `GET` | Fetch current exchange rate between currencies |
 | `/history` | `GET` | Retrieve conversion history by ID or date |
 
@@ -76,8 +76,8 @@ amount,sourceCurrency,targetCurrency
 
 | Parameter         | Type   | Required | Example | Description                  |
 |-------------------|--------|----------|---------|------------------------------|
-| `sourceCurrency`  | string | Yes      | USD     | Source currency code         |
-| `targetCurrency`  | string | Yes      | EUR     | Target currency code         |
+| `sourceCurrency`  | string | Yes      | USD     | Source transaction code         |
+| `targetCurrency`  | string | Yes      | EUR     | Target transaction code         |
 
 ### Response
 
@@ -126,4 +126,4 @@ amount,sourceCurrency,targetCurrency
 
 ## Acknowledgements
 
-- [Interactive Documentation](http://localhost:8080/swagger-ui/index.html)
+- [Interactive Documentation](http://localhost:8080/webjars/swagger-ui/5.21.0/index.html?url=/v3/api-docs)
