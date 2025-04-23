@@ -9,6 +9,7 @@ import com.abdullahkahraman.exchange.exception.InvalidCsvFormatException;
 import com.abdullahkahraman.exchange.model.Currency;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
+import com.abdullahkahraman.exchange.provider.ExchangeRateChainManager;
 import com.abdullahkahraman.exchange.repository.CurrencyRepository;
 import com.abdullahkahraman.exchange.validator.CurrencyCodeValidator;
 import com.abdullahkahraman.exchange.validator.Validator;
@@ -44,6 +45,7 @@ class CurrencyServiceTest {
     private Validator validator1;
     private Validator validator2;
     private CurrencyCodeValidator currencyCodeValidator;
+    private ExchangeRateChainManager exchangeRateChainManager;
 
     @BeforeEach
     void setUp() {
@@ -55,11 +57,13 @@ class CurrencyServiceTest {
         validator2 = Mockito.mock(Validator.class);
         conversionFileParserFactory = Mockito.mock(ConversionFileParserFactory.class);
         currencyCodeValidator = Mockito.mock(CurrencyCodeValidator.class);
+        exchangeRateChainManager = Mockito.mock(ExchangeRateChainManager.class);
         currencyService = new CurrencyService(currencyRepository,
                 currencyCacheService,
                 currencyLayerClient,
                 conversionFileParserFactory,
-                List.of(validator1, validator2), currencyCodeValidator);
+                List.of(validator1, validator2),
+                currencyCodeValidator, exchangeRateChainManager);
     }
 
     @Test

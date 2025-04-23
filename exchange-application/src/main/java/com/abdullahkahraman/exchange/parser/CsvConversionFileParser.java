@@ -1,7 +1,6 @@
 package com.abdullahkahraman.exchange.parser;
 
 import com.abdullahkahraman.exchange.dto.CurrencyConversionRequest;
-import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.InvalidCsvFormatException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;

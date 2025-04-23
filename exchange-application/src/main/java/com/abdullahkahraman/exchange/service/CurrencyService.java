@@ -10,6 +10,7 @@ import com.abdullahkahraman.exchange.exception.TransactionNotFoundException;
 import com.abdullahkahraman.exchange.model.Currency;
 import com.abdullahkahraman.exchange.parser.ConversionFileParser;
 import com.abdullahkahraman.exchange.parser.ConversionFileParserFactory;
+import com.abdullahkahraman.exchange.provider.ExchangeRateChainManager;
 import com.abdullahkahraman.exchange.repository.CurrencyRepository;
 import com.abdullahkahraman.exchange.specification.ConversionTransactionSpecification;
 import com.abdullahkahraman.exchange.validator.CurrencyCodeValidator;
@@ -45,6 +46,7 @@ public class CurrencyService {
     private final ConversionFileParserFactory conversionFileParserFactory;
     private final List<Validator> validators;
     private final CurrencyCodeValidator currencyCodeValidator;
+    private final ExchangeRateChainManager exchangeRateChainManager;
 
     /**
      * Retrieves the exchange rate between two specified currencies.
@@ -89,7 +91,7 @@ public class CurrencyService {
 
         try {
             logger.info("Cache miss. Fetching exchange rate from external service: {} -> {}", sourceCurrency, targetCurrency);
-            Double fetched = currencyLayerClient.fetchExchangeRate(sourceCurrency, targetCurrency, key);
+            Double fetched = exchangeRateChainManager.getRate(sourceCurrency, targetCurrency, key);
             currencyCacheService.setRate(key, fetched, EXCHANGE_RATE_CACHE_TTL_MINUTES);
             logger.debug("Exchange rate fetched and cached: {} -> {} = {}", sourceCurrency, targetCurrency, fetched);
             return fetched;
@@ -101,8 +103,8 @@ public class CurrencyService {
                 return fallback;
             }
 
-            logger.error("Failed to fetch and fallback for {} -> {}", sourceCurrency, targetCurrency, e);
-            throw new CurrencyRateFetchException(sourceCurrency.toString(), targetCurrency.toString(), e);
+            logger.error("Failed to fetch and fallback for {} -> {}", sourceCurrency, targetCurrency);
+            throw new CurrencyRateFetchException(sourceCurrency.toString(), targetCurrency.toString());
         }
     }
 
