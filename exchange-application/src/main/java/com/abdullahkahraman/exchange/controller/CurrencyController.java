@@ -9,6 +9,8 @@ import com.abdullahkahraman.exchange.exception.MissingSearchCriteriaException;
 import com.abdullahkahraman.exchange.service.CurrencyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -57,9 +59,29 @@ public class CurrencyController {
         return ResponseEntity.ok().body(currencyService.getExchangeRate(sourceCurrency, targetCurrency));
     }
 
+    @Operation(
+            summary = "Convert currency via JSON or file upload",
+            description = "Converts an amount from source currency to target currency. You can either send a JSON payload or upload a CSV or EXCEL file containing multiple conversion requests."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Conversion completed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("/convert")
     public ResponseEntity<List<CurrencyConversionResponse>> convert(
+            @Parameter(
+                    description = "JSON data for a single currency conversion request",
+                    required = false,
+                    schema = @Schema(implementation = CurrencyConversionRequest.class)
+            )
             @RequestPart(value = "data", required = false) CurrencyConversionRequest request,
+
+            @Parameter(
+                    description = "CSV or EXCEL file for bulk currency conversions",
+                    required = false,
+                    content = @Content(mediaType = "multipart/form-data")
+            )
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
         return ResponseEntity.ok().body(currencyService.convertCurrency(request, file));
