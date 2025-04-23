@@ -19,7 +19,7 @@ import java.util.List;
 
 public class CsvConversionFileParser implements ConversionFileParser{
     @Override
-    public List<CurrencyConversionRequest> parse(MultipartFile file) throws IOException {
+    public List<CurrencyConversionRequest> parse(MultipartFile file) {
         List<CurrencyConversionRequest> list = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));

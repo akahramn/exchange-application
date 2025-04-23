@@ -61,7 +61,7 @@ public class CurrencyController {
     public ResponseEntity<List<CurrencyConversionResponse>> convert(
             @RequestPart(value = "data", required = false) CurrencyConversionRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
+    ) {
         return ResponseEntity.ok().body(currencyService.convertCurrency(request, file));
     }
 

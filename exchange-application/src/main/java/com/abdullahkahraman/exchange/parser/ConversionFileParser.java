@@ -7,5 +7,5 @@ import java.io.IOException;
 import java.util.List;
 
 public interface ConversionFileParser {
-    List<CurrencyConversionRequest> parse(MultipartFile file) throws IOException;
+    List<CurrencyConversionRequest> parse(MultipartFile file);
 }

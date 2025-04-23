@@ -64,7 +64,7 @@ public class CurrencyService {
         }
     }
 
-    public List<CurrencyConversionResponse> convertCurrency(CurrencyConversionRequest request, MultipartFile file) throws IOException {
+    public List<CurrencyConversionResponse> convertCurrency(CurrencyConversionRequest request, MultipartFile file) {
         List<CurrencyConversionResponse> responseList = new ArrayList<>();
         if (!ObjectUtils.isEmpty(request)) {
             responseList.add(convertSingleCurrency(request));
@@ -94,18 +94,7 @@ public class CurrencyService {
                 .build();
     }
 
-    private void validateRequest(CurrencyConversionRequest request) {
-        for (Validator validator : validators) {
-            validator.validate(request);
-        }
-    }
-
-    private String generateTransactionId() {
-        return UUID.randomUUID().toString();
-    }
-
-
-    public List<CurrencyConversionResponse> convertFileCurrency( MultipartFile file) throws IOException {
+    public List<CurrencyConversionResponse> convertFileCurrency( MultipartFile file) {
         List<CurrencyConversionResponse> results = new ArrayList<>();
         ConversionFileParser parser = conversionFileParserFactory.getParser(file);
         List<CurrencyConversionRequest> requests = parser.parse(file);
@@ -154,5 +143,15 @@ public class CurrencyService {
         ));
 
         return new HistoryResponse(dtoPage);
+    }
+
+    private void validateRequest(CurrencyConversionRequest request) {
+        for (Validator validator : validators) {
+            validator.validate(request);
+        }
+    }
+
+    private String generateTransactionId() {
+        return UUID.randomUUID().toString();
     }
 }

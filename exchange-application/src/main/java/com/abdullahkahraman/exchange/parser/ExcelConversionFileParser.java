@@ -17,7 +17,7 @@ import java.util.List;
 
 public class ExcelConversionFileParser implements ConversionFileParser {
     @Override
-    public List<CurrencyConversionRequest> parse(MultipartFile file) throws IOException {
+    public List<CurrencyConversionRequest> parse(MultipartFile file) {
         List<CurrencyConversionRequest> list = new ArrayList<>();
 
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
