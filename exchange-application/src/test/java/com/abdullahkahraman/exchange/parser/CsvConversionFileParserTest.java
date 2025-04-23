@@ -38,8 +38,8 @@ class CsvConversionFileParserTest {
 
         assertEquals(1, result.size());
         assertEquals(100, result.get(0).getAmount().intValue());
-        assertEquals(CurrencyCode.USD, result.get(0).getSourceCurrency());
-        assertEquals(CurrencyCode.EUR, result.get(0).getTargetCurrency());
+        assertEquals(CurrencyCode.USD.toString(), result.get(0).getSourceCurrency());
+        assertEquals(CurrencyCode.EUR.toString(), result.get(0).getTargetCurrency());
     }
 
     @Test
