@@ -7,6 +7,10 @@ import com.abdullahkahraman.exchange.dto.HistoryResponse;
 import com.abdullahkahraman.exchange.enums.CurrencyCode;
 import com.abdullahkahraman.exchange.exception.MissingSearchCriteriaException;
 import com.abdullahkahraman.exchange.service.CurrencyService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -26,9 +30,28 @@ import java.util.List;
 public class CurrencyController {
     private final CurrencyService currencyService;
 
+    @Operation(
+            summary = "Get exchange rate",
+            description = "Retrieves the latest exchange rate between the given source and target currencies."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Exchange rate retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid currency code provided"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/rate")
     public ResponseEntity<ExchangeRateResponse> getExchangeRate(
+            @Parameter(
+                    description = "The currency code to convert from (e.g., USD)",
+                    example = "USD",
+                    required = true
+            )
             @RequestParam("sourceCurrency") CurrencyCode sourceCurrency,
+            @Parameter(
+                    description = "The currency code to convert to (e.g., EUR)",
+                    example = "EUR",
+                    required = true
+            )
             @RequestParam("targetCurrency") CurrencyCode targetCurrency
     ) {
         return ResponseEntity.ok().body(currencyService.getExchangeRate(sourceCurrency, targetCurrency));
