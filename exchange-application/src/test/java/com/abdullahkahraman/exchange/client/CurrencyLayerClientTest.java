@@ -64,7 +64,7 @@ class CurrencyLayerClientTest {
         when(restTemplate.getForEntity(anyString(), eq(CurrencyLayerResponse.class)))
                 .thenReturn(entity);
 
-        assertThrows(NullPointerException.class, () -> currencyLayerClient.fetchExchangeRate(source, target, "USDEUR"));
+        assertThrows(RateNotFoundException.class, () -> currencyLayerClient.fetchExchangeRate(source, target, "USDEUR"));
     }
 
     @Test

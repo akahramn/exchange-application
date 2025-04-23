@@ -13,6 +13,8 @@ import com.abdullahkahraman.exchange.repository.CurrencyRepository;
 import com.abdullahkahraman.exchange.specification.ConversionTransactionSpecification;
 import com.abdullahkahraman.exchange.validator.Validator;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,6 +35,7 @@ import java.util.UUID;
 public class CurrencyService {
 
     private static final long EXCHANGE_RATE_CACHE_TTL_MINUTES = 60;
+    private static final Logger logger = LoggerFactory.getLogger(CurrencyService.class);
 
     private final CurrencyRepository currencyRepository;
     private final CurrencyCacheService currencyCacheService;
@@ -49,7 +52,12 @@ public class CurrencyService {
      *         target currency, and the latest exchange rate value
      */
     public ExchangeRateResponse getExchangeRate(CurrencyCode sourceCurrency, CurrencyCode targetCurrency) {
+        logger.info("Fetching exchange rate from {} to {}", sourceCurrency, targetCurrency);
+
         Double rate = getRate(sourceCurrency, targetCurrency);
+
+        logger.debug("Retrieved exchange rate: {}", rate);
+
         return new ExchangeRateResponse(sourceCurrency, targetCurrency, rate);
     }
 
@@ -67,18 +75,27 @@ public class CurrencyService {
      */
     public Double getRate(CurrencyCode sourceCurrency, CurrencyCode targetCurrency) {
         String key = sourceCurrency.toString() + targetCurrency.toString();
-
+        logger.debug("Checking exchange rate cache for key: {}", key);
         if (currencyCacheService.exists(key)) {
+            logger.info("Cache hit for key: {}", key);
             return currencyCacheService.getRate(key);
         }
 
         try {
+            logger.info("Cache miss. Fetching exchange rate from external service: {} -> {}", sourceCurrency, targetCurrency);
             Double fetched = currencyLayerClient.fetchExchangeRate(sourceCurrency, targetCurrency, key);
             currencyCacheService.setRate(key, fetched, EXCHANGE_RATE_CACHE_TTL_MINUTES);
+            logger.debug("Exchange rate fetched and cached: {} -> {} = {}", sourceCurrency, targetCurrency, fetched);
             return fetched;
         } catch (Exception e) {
+            logger.warn("External service failed, attempting to use fallback from cache for key: {}", key);
             Double fallback = currencyCacheService.getRate(key);
-            if (!ObjectUtils.isEmpty(fallback)) return fallback;
+            if (!ObjectUtils.isEmpty(fallback)) {
+                logger.info("Using fallback cached rate for key {}: {}", key, fallback);
+                return fallback;
+            }
+
+            logger.error("Failed to fetch and fallback for {} -> {}", sourceCurrency, targetCurrency, e);
             throw new CurrencyRateFetchException(sourceCurrency.toString(), targetCurrency.toString(), e);
         }
     }
@@ -101,13 +118,15 @@ public class CurrencyService {
     public List<CurrencyConversionResponse> convertCurrency(CurrencyConversionRequest request, MultipartFile file) {
         List<CurrencyConversionResponse> responseList = new ArrayList<>();
         if (!ObjectUtils.isEmpty(request)) {
+            logger.info("Processing single currency conversion request: {}", request);
             responseList.add(convertSingleCurrency(request));
         }
 
         if (!ObjectUtils.isEmpty(file)) {
+            logger.info("Processing currency conversion from uploaded file: {}", file.getOriginalFilename());
             responseList.addAll(convertFileCurrency(file));
         }
-
+        logger.debug("Total conversion results returned: {}", responseList.size());
         return responseList;
     }
 
@@ -122,30 +141,58 @@ public class CurrencyService {
      *         and converted amount
      */
     public CurrencyConversionResponse convertSingleCurrency(CurrencyConversionRequest request) {
+        logger.info("Starting single currency conversion: {} -> {}",
+                request.getSourceCurrency(), request.getTargetCurrency());
+
         validateRequest(request);
+        logger.debug("Request validated: {}", request);
 
         Double rateValue = getRate(request.getSourceCurrency(), request.getTargetCurrency());
-        BigDecimal result = calculateAmount(request.getAmount(), rateValue);
-        String transactionId = generateTransactionId();
+        logger.debug("Retrieved exchange rate: {} -> {} = {}",
+                request.getSourceCurrency(), request.getTargetCurrency(), rateValue);
 
+        BigDecimal result = calculateAmount(request.getAmount(), rateValue);
+        logger.debug("Calculated converted amount: {} {} = {} {}",
+                request.getAmount(), request.getSourceCurrency(), result, request.getTargetCurrency());
+
+        String transactionId = generateTransactionId();
         saveTransaction(transactionId, request, result);
-        return CurrencyConversionResponse.builder()
+        logger.info("Transaction saved with ID: {}", transactionId);
+
+        CurrencyConversionResponse response = CurrencyConversionResponse.builder()
                 .transactionId(transactionId)
                 .sourceCurrency(request.getSourceCurrency())
                 .targetCurrency(request.getTargetCurrency())
                 .sourceAmount(request.getAmount())
                 .convertedAmount(result)
                 .build();
+
+        logger.info("Returning conversion response: {}", response);
+        return response;
     }
 
     public List<CurrencyConversionResponse> convertFileCurrency( MultipartFile file) {
+        logger.info("Starting file-based currency conversion for file: {}", file.getOriginalFilename());
+
         List<CurrencyConversionResponse> results = new ArrayList<>();
         ConversionFileParser parser = conversionFileParserFactory.getParser(file);
+
+        logger.debug("Using parser implementation: {}", parser.getClass().getSimpleName());
+
         List<CurrencyConversionRequest> requests = parser.parse(file);
+        logger.info("Parsed {} conversion requests from file: {}", requests.size(), file.getOriginalFilename());
+
         for (CurrencyConversionRequest request : requests) {
-            CurrencyConversionResponse response = convertSingleCurrency(request);
-            results.add(response);
+            try {
+                CurrencyConversionResponse response = convertSingleCurrency(request);
+                results.add(response);
+                logger.debug("Processed request: {} -> {}", request.getSourceCurrency(), request.getTargetCurrency());
+            } catch (Exception e) {
+                logger.error("Failed to process conversion request: {}, reason: {}", request, e.getMessage(), e);
+            }
         }
+
+        logger.info("Completed file-based conversion. Total successful conversions: {}", results.size());
         return results;
     }
 
@@ -160,10 +207,14 @@ public class CurrencyService {
      */
     public static BigDecimal calculateAmount(BigDecimal amount, Double rate) {
         if (ObjectUtils.isEmpty(amount) || ObjectUtils.isEmpty(rate)) {
+            logger.error("Invalid input: amount or rate is null or empty. amount={}, rate={}", amount, rate);
             throw new IllegalArgumentException("Amount and rate must not be null.");
         }
-        return amount.multiply(BigDecimal.valueOf(rate)).setScale(4, RoundingMode.HALF_UP);
 
+        BigDecimal result = amount.multiply(BigDecimal.valueOf(rate)).setScale(4, RoundingMode.HALF_UP);
+        logger.debug("Calculated amount: {} * {} = {}", amount, rate, result);
+
+        return result;
     }
 
     /**
@@ -185,7 +236,19 @@ public class CurrencyService {
                 .sourceCurrency(request.getSourceCurrency())
                 .targetCurrency(request.getTargetCurrency())
                 .build();
-        currencyRepository.save(transaction);
+
+        try {
+            currencyRepository.save(transaction);
+            logger.info("Saved currency conversion transaction: ID={}, from {} to {}, amount={}, result={}",
+                    transactionId,
+                    request.getSourceCurrency(),
+                    request.getTargetCurrency(),
+                    request.getAmount(),
+                    result);
+        } catch (Exception e) {
+            logger.error("Failed to save transaction ID: {}, error: {}", transactionId, e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**
@@ -197,10 +260,17 @@ public class CurrencyService {
      * @return a {@link HistoryResponse} containing the paginated and filtered transaction data
      */
     public HistoryResponse getHistory(String transactionId, LocalDate date, Pageable pageable) {
+        logger.info("Fetching conversion history with transactionId='{}' and date='{}'", transactionId, date);
+
         validateTransactionIdExists(transactionId);
         Specification<Currency> spec = ConversionTransactionSpecification.filterBy(transactionId, date);
         Page<Currency> currencyPage = currencyRepository.findAll(spec, pageable);
+
+        logger.debug("Fetched {} records from DB for history query", currencyPage.getTotalElements());
+
         Page<CurrencyDto> dtoPage = currencyPage.map(this::mapCurrencyToDto);
+
+        logger.info("Mapped {} transactions to DTOs", dtoPage.getContent().size());
 
         return new HistoryResponse(dtoPage);
     }

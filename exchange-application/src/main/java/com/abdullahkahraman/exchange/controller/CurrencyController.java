@@ -14,11 +14,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +32,9 @@ import java.util.List;
 @RequestMapping("api/v1/currency")
 @RequiredArgsConstructor
 public class CurrencyController {
+
+    private static final Logger logger = LoggerFactory.getLogger(CurrencyController.class);
+
     private final CurrencyService currencyService;
 
     /**
@@ -62,7 +68,13 @@ public class CurrencyController {
             )
             @RequestParam("targetCurrency") CurrencyCode targetCurrency
     ) {
-        return ResponseEntity.ok().body(currencyService.getExchangeRate(sourceCurrency, targetCurrency));
+        logger.info("Received request to get exchange rate: {} -> {}", sourceCurrency, targetCurrency);
+
+        ExchangeRateResponse response = currencyService.getExchangeRate(sourceCurrency, targetCurrency);
+
+        logger.debug("Exchange rate response: {}", response);
+
+        return ResponseEntity.ok().body(response);
     }
 
     /**
@@ -100,7 +112,21 @@ public class CurrencyController {
             )
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        return ResponseEntity.ok().body(currencyService.convertCurrency(request, file));
+        if (!ObjectUtils.isEmpty(request)) {
+            logger.info("Received single currency conversion request: {} -> {}, amount={}",
+                    request.getSourceCurrency(), request.getTargetCurrency(), request.getAmount());
+        }
+
+        if (!ObjectUtils.isEmpty(file)) {
+            logger.info("Received bulk currency conversion file upload: filename={}, size={} bytes",
+                    file.getOriginalFilename(), file.getSize());
+        }
+
+        List<CurrencyConversionResponse> result = currencyService.convertCurrency(request, file);
+
+        logger.debug("Currency conversion result: {}", result);
+
+        return ResponseEntity.ok().body(result);
     }
 
     /**
@@ -134,8 +160,15 @@ public class CurrencyController {
             @ParameterObject
             @PageableDefault(size = 10) Pageable pageable
     ) {
+        logger.info("Received history request: transactionId='{}', date='{}', page={}, size={}",
+                transactionId, date, pageable.getPageNumber(), pageable.getPageSize());
+
         validateSearchCriteria(transactionId, date);
+
         HistoryResponse response = currencyService.getHistory(transactionId, date, pageable);
+
+        logger.debug("Returning {} records in history response", response.getContent().size());
+
         return ResponseEntity.ok(response);
     }
 

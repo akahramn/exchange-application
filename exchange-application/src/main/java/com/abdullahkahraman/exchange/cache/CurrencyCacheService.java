@@ -1,6 +1,9 @@
 package com.abdullahkahraman.exchange.cache;
 
+import com.abdullahkahraman.exchange.service.CurrencyService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +12,8 @@ import java.time.Duration;
 @Service
 @RequiredArgsConstructor
 public class CurrencyCacheService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CurrencyCacheService.class);
 
     private final RedisTemplate<String, Double> redisTemplate;
 
@@ -20,7 +25,12 @@ public class CurrencyCacheService {
      * @param ttlMinutes the time-to-live duration for the cache entry, in minutes
      */
     public void setRate(String key, Double rate, long ttlMinutes) {
-        redisTemplate.opsForValue().set(key, rate, Duration.ofMinutes(ttlMinutes));
+        try {
+            redisTemplate.opsForValue().set(key, rate, Duration.ofMinutes(ttlMinutes));
+            logger.info("Exchange rate cached successfully for key='{}'", key);
+        } catch (Exception e) {
+            logger.error("Failed to cache exchange rate for key='{}': {}", key, e.getMessage(), e);
+        }
     }
 
     /**
@@ -30,7 +40,21 @@ public class CurrencyCacheService {
      * @return the currency rate associated with the given key, or null if no value exists for the key
      */
     public Double getRate(String key) {
-        return redisTemplate.opsForValue().get(key);
+        try {
+            Double rate = redisTemplate.opsForValue().get(key);
+
+            if (rate != null) {
+                logger.info("Cache exist for key='{}', rate={}", key, rate);
+            } else {
+                logger.warn("Cache does not exist for key='{}'", key);
+            }
+
+            return rate;
+
+        } catch (Exception e) {
+            logger.error("Failed to retrieve rate from cache for key='{}': {}", key, e.getMessage(), e);
+            return null;
+        }
     }
 
     /**
@@ -40,6 +64,20 @@ public class CurrencyCacheService {
      * @return true if the key exists in the cache, false otherwise
      */
     public boolean exists(String key) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        try {
+            boolean exists = redisTemplate.hasKey(key);
+
+            if (exists) {
+                logger.info("Cache key exists: '{}'", key);
+            } else {
+                logger.warn("Cache key does not exist: '{}'", key);
+            }
+
+            return exists;
+
+        } catch (Exception e) {
+            logger.error("Failed to check existence of key='{}': {}", key, e.getMessage(), e);
+            return false;
+        }
     }
 }
