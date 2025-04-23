@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -126,23 +125,27 @@ public class CurrencyService {
     }
 
     public HistoryResponse getHistory(String transactionId, LocalDate date, Pageable pageable) {
-        Specification<Currency> spec =
-                ConversionTransactionSpecification.filterBy(transactionId, date);
+        validateTransactionIdExists(transactionId);
+        Specification<Currency> spec = ConversionTransactionSpecification.filterBy(transactionId, date);
+        Page<Currency> currencyPage = currencyRepository.findAll(spec, pageable);
+        Page<CurrencyDto> dtoPage = currencyPage.map(this::mapCurrencyToDto);
 
-        if (!ObjectUtils.isEmpty(transactionId) && !currencyRepository.existsById(transactionId)) {
+        return new HistoryResponse(dtoPage);
+    }
+
+    private void validateTransactionIdExists(String transactionId) {
+        if (transactionId != null && !transactionId.isBlank() && !currencyRepository.existsById(transactionId)) {
             throw new TransactionNotFoundException(transactionId);
         }
+    }
 
-        Page<Currency> currencyPage = currencyRepository.findAll(spec, pageable);
-
-        Page<CurrencyDto> dtoPage = currencyPage.map(currency -> new CurrencyDto(
+    private CurrencyDto mapCurrencyToDto(Currency currency) {
+        return new CurrencyDto(
                 currency.getTransactionId(),
                 currency.getSourceCurrency().name(),
                 currency.getTargetCurrency().name(),
                 currency.getResult()
-        ));
-
-        return new HistoryResponse(dtoPage);
+        );
     }
 
     private void validateRequest(CurrencyConversionRequest request) {
